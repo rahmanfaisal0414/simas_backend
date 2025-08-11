@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
 const kategoriRoutes = require('./routes/kategoriRoutes');
@@ -29,6 +30,10 @@ app.use('/api/stok-masuk', stokMasukRoutes);
 app.use('/api/stok-keluar', stokKeluarRoutes);
 app.use('/api/stok-audit', stokAuditRoutes); 
 app.use('/api/laporan', laporanRoutes);
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
