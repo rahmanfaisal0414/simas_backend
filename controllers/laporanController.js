@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const ExcelJS = require('exceljs');
+const PDFDocument = require('pdfkit');
 
 // Laporan Hari Ini
 const getLaporanHariIni = async (req, res) => {
@@ -340,9 +342,9 @@ const getLaporanStok = async (req, res) => {
         FROM nota_stok_masuk n
         JOIN stok_masuk_detail d ON d.nota_id = n.id
         JOIN barang b ON b.id = d.barang_id
-
+    
         UNION ALL
-
+    
         SELECT 
           b.id AS barang_id,
           b.nama_barang,
@@ -354,9 +356,9 @@ const getLaporanStok = async (req, res) => {
         FROM nota_stok_keluar n
         JOIN stok_keluar_detail d ON d.nota_id = n.id
         JOIN barang b ON b.id = d.barang_id
-
+    
         UNION ALL
-
+    
         SELECT 
           b.id AS barang_id,
           b.nama_barang,
@@ -370,21 +372,22 @@ const getLaporanStok = async (req, res) => {
         JOIN barang b ON b.id = d.barang_id
       )
       SELECT 
-        barang_id,
-        nama_barang,
-        satuan,
-        SUM(CASE WHEN tipe = 'masuk' THEN jumlah ELSE 0 END) AS stok_masuk,
-        SUM(CASE WHEN tipe = 'keluar' THEN ABS(jumlah) ELSE 0 END) AS stok_keluar,
-        SUM(CASE WHEN tipe = 'audit' THEN jumlah ELSE 0 END) AS total_audit,
-        MAX(harga_satuan) FILTER (WHERE harga_satuan IS NOT NULL) AS harga_terakhir,
-        (SELECT stok FROM barang WHERE id = pergerakan.barang_id) AS stok_sisa,
-        COALESCE((SELECT stok FROM barang WHERE id = pergerakan.barang_id), 0) 
-          * COALESCE(MAX(harga_satuan) FILTER (WHERE harga_satuan IS NOT NULL), 0) AS nilai_persediaan
-      FROM pergerakan
-      ${filter}
-      GROUP BY barang_id, nama_barang, satuan
-      ORDER BY nama_barang ASC
-    `, params);
+        p.barang_id,
+        p.nama_barang,
+        p.satuan,
+        b.min_stok,
+        SUM(CASE WHEN p.tipe = 'masuk' THEN p.jumlah ELSE 0 END) AS stok_masuk,
+        SUM(CASE WHEN p.tipe = 'keluar' THEN ABS(p.jumlah) ELSE 0 END) AS stok_keluar,
+        SUM(CASE WHEN p.tipe = 'audit' THEN p.jumlah ELSE 0 END) AS total_audit,
+        MAX(p.harga_satuan) FILTER (WHERE p.harga_satuan IS NOT NULL) AS harga_terakhir,
+        b.stok AS stok_sisa,
+        b.stok * COALESCE(MAX(p.harga_satuan) FILTER (WHERE p.harga_satuan IS NOT NULL), 0) AS nilai_persediaan
+      FROM pergerakan p
+      JOIN barang b ON b.id = p.barang_id
+      ${filter ? `WHERE p.tanggal::date BETWEEN $1 AND $2` : ``}
+      GROUP BY p.barang_id, p.nama_barang, p.satuan, b.min_stok, b.stok
+      ORDER BY p.nama_barang ASC
+    `, params);    
 
     res.json(result.rows);
   } catch (err) {
@@ -491,13 +494,155 @@ const getLaporanTransaksi = async (req, res) => {
   }
 };
 
+async function _queryLaporanStok(startDate, endDate) {
+  const params = [];
+  let filter = '';
 
+  if (startDate && endDate) {
+    params.push(startDate, endDate);
+    filter = `WHERE p.tanggal::date BETWEEN $1 AND $2`;
+  }
+
+  const { rows } = await pool.query(`
+    WITH pergerakan AS (
+      SELECT b.id AS barang_id, b.nama_barang, b.satuan,
+             n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+             'masuk' AS tipe, d.jumlah, d.harga_satuan
+      FROM nota_stok_masuk n
+      JOIN stok_masuk_detail d ON d.nota_id = n.id
+      JOIN barang b ON b.id = d.barang_id
+
+      UNION ALL
+
+      SELECT b.id, b.nama_barang, b.satuan,
+             n.created_at AT TIME ZONE 'Asia/Jakarta', 'keluar',
+             -d.jumlah, NULL AS harga_satuan -- stok keluar harga diabaikan
+      FROM nota_stok_keluar n
+      JOIN stok_keluar_detail d ON d.nota_id = n.id
+      JOIN barang b ON b.id = d.barang_id
+
+      UNION ALL
+
+      SELECT b.id, b.nama_barang, b.satuan,
+             n.created_at AT TIME ZONE 'Asia/Jakarta', 'audit',
+             d.selisih, NULL
+      FROM nota_audit_stok n
+      JOIN audit_stok_detail d ON d.nota_id = n.id
+      JOIN barang b ON b.id = d.barang_id
+    ),
+    harga_masuk_terbaru AS (
+      SELECT DISTINCT ON (barang_id)
+             barang_id, harga_satuan
+      FROM pergerakan
+      WHERE tipe = 'masuk' AND harga_satuan IS NOT NULL
+      ORDER BY barang_id, tanggal DESC
+    )
+    SELECT 
+      p.barang_id,
+      p.nama_barang,
+      p.satuan,
+      b.min_stok,
+      SUM(CASE WHEN p.tipe='masuk' THEN p.jumlah ELSE 0 END) AS stok_masuk,
+      SUM(CASE WHEN p.tipe='keluar' THEN ABS(p.jumlah) ELSE 0 END) AS stok_keluar,
+      SUM(CASE WHEN p.tipe='audit' THEN p.jumlah ELSE 0 END) AS total_audit,
+      hm.harga_satuan AS harga_terakhir,
+      b.stok AS stok_sisa,
+      b.stok * COALESCE(hm.harga_satuan, 0) AS nilai_persediaan
+    FROM pergerakan p
+    JOIN barang b ON b.id = p.barang_id
+    LEFT JOIN harga_masuk_terbaru hm ON hm.barang_id = p.barang_id
+    ${filter}
+    GROUP BY p.barang_id, p.nama_barang, p.satuan, b.min_stok, b.stok, hm.harga_satuan
+    ORDER BY p.nama_barang ASC
+  `, params);
+
+  return rows;
+}
+
+
+// =============================
+// _queryLaporanTransaksi (Revisi)
+// =============================
+async function _queryLaporanTransaksi(startDate, endDate, tipe) {
+  const params = [];
+  const filters = [];
+
+  if (startDate && endDate) {
+    params.push(startDate, endDate);
+    filters.push(`tanggal::date BETWEEN $${params.length - 1} AND $${params.length}`);
+  }
+
+  if (tipe && ['masuk', 'keluar'].includes(tipe.toLowerCase())) {
+    params.push(tipe.toLowerCase());
+    filters.push(`tipe = $${params.length}`);
+  }
+
+  const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+  const { rows } = await pool.query(`
+    SELECT 
+      tipe,
+      tanggal,
+      nota,
+      CASE 
+        WHEN tipe = 'masuk' THEN CONCAT(pemasok, ' (Pemasok)')
+        WHEN tipe = 'keluar' THEN CONCAT(pelanggan, ' (Pelanggan)')
+        ELSE COALESCE(pemasok, pelanggan)
+      END AS relasi,
+      nama_barang,
+      jumlah,
+      harga_satuan,
+      (jumlah * harga_satuan) AS nominal
+    FROM (
+      -- stok masuk
+      SELECT 
+        'masuk' AS tipe,
+        n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+        n.nota,
+        p.nama_pemasok AS pemasok,
+        NULL AS pelanggan,
+        b.nama_barang,
+        d.jumlah,
+        d.harga_satuan
+      FROM nota_stok_masuk n
+      LEFT JOIN pemasok p ON p.id = n.pemasok_id
+      JOIN stok_masuk_detail d ON d.nota_id = n.id
+      JOIN barang b ON b.id = d.barang_id
+
+      UNION ALL
+
+      -- stok keluar
+      SELECT 
+        'keluar',
+        n.created_at AT TIME ZONE 'Asia/Jakarta',
+        n.nota,
+        NULL,
+        pl.nama_pelanggan,
+        b.nama_barang,
+        d.jumlah,
+        d.harga_satuan
+      FROM nota_stok_keluar n
+      LEFT JOIN pelanggan pl ON pl.id = n.pelanggan_id
+      JOIN stok_keluar_detail d ON d.nota_id = n.id
+      JOIN barang b ON b.id = d.barang_id
+    ) combined
+    ${whereClause}
+    ORDER BY tanggal DESC, nota, nama_barang
+  `, params);
+
+  return rows;
+}
+
+// di akhir file
 module.exports = {
   getLaporanHariIni,
   getLaporanSemua,
   getLaporanDetail,
   deleteLaporan,
   getLaporanStok,
-  getLaporanTransaksi
+  getLaporanTransaksi,
+  _queryLaporanStok,
+  _queryLaporanTransaksi,
 };
+
 

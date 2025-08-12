@@ -33,9 +33,11 @@ const createNotaStokKeluar = async (data) => {
     await client.query('COMMIT');
     return {
       message: 'Stok keluar berhasil disimpan',
+      id: notaRes.rows[0].id,
       nota: notaRes.rows[0].nota,
       created_at: notaRes.rows[0].created_at
     };
+    
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -56,9 +58,21 @@ const getAllNotaKeluar = async () => {
 };
 
 const getNotaKeluarById = async (id) => {
-  const nota = await pool.query(`SELECT * FROM nota_stok_keluar WHERE id = $1`, [id]);
+  const nota = await pool.query(`
+    SELECT 
+      nsk.*, 
+      p.nama_pelanggan, 
+      p.kontak AS no_wa, -- ambil langsung dari tabel pelanggan
+      u.username
+    FROM nota_stok_keluar nsk
+    LEFT JOIN pelanggan p ON nsk.pelanggan_id = p.id
+    LEFT JOIN users u ON nsk.user_id = u.id
+    WHERE nsk.id = $1
+  `, [id]);
+
   const detail = await pool.query(`
-    SELECT d.*, b.nama_barang FROM stok_keluar_detail d
+    SELECT d.*, b.nama_barang 
+    FROM stok_keluar_detail d
     JOIN barang b ON d.barang_id = b.id
     WHERE d.nota_id = $1
   `, [id]);
@@ -68,6 +82,8 @@ const getNotaKeluarById = async (id) => {
     detail: detail.rows
   };
 };
+
+
 
 const deleteNotaKeluar = async (id) => {
   const client = await pool.connect();
