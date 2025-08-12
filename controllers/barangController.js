@@ -7,9 +7,50 @@ const {
   getRiwayatBarang,
   getRiwayatDetail,
   deleteRiwayat
-} = require('../models/barangModel'); // ✅ ini sudah benar, jadi langsung pakai getRiwayatDetail
+} = require('../models/barangModel');
 
+const Minio = require('minio');
+const pool = require('../config/db');
+const fs = require('fs');
 const path = require('path');
+
+// 🔹 Konfigurasi MinIO
+const minioClient = new Minio.Client({
+  endPoint: process.env.MINIO_ENDPOINT,
+  port: parseInt(process.env.MINIO_PORT || '9000'),
+  useSSL: process.env.MINIO_USE_SSL === 'true',
+  accessKey: process.env.MINIO_ACCESS_KEY,
+  secretKey: process.env.MINIO_SECRET_KEY,
+});
+
+const bucketName = 'barang';
+
+// Pastikan bucket ada
+(async () => {
+  try {
+    const exists = await minioClient.bucketExists(bucketName);
+    if (!exists) {
+      await minioClient.makeBucket(bucketName);
+      console.log(`✅ Bucket "${bucketName}" dibuat di MinIO`);
+    }
+  } catch (err) {
+    console.error('❌ Gagal memeriksa/membuat bucket:', err.message);
+  }
+})();
+
+// Helper untuk upload file
+async function uploadToMinio(file) {
+  const fileName = `${Date.now()}_${file.originalname}`;
+  const filePath = file.path;
+
+  await minioClient.fPutObject(bucketName, fileName, filePath, {
+    'Content-Type': file.mimetype
+  });
+
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  return `${process.env.MINIO_PUBLIC_URL}/${bucketName}/${fileName}`;
+}
 
 // =============================
 // GET daftar barang
@@ -43,7 +84,7 @@ const addBarang = async (req, res) => {
   try {
     let foto_url = null;
     if (req.file) {
-      foto_url = `/uploads/barang/${req.file.filename}`;
+      foto_url = await uploadToMinio(req.file);
     }
 
     const newBarang = await createBarang({
@@ -64,7 +105,7 @@ const editBarang = async (req, res) => {
   try {
     let foto_url = req.body.foto_url || null;
     if (req.file) {
-      foto_url = `/uploads/barang/${req.file.filename}`;
+      foto_url = await uploadToMinio(req.file);
     }
 
     const updatedBarang = await updateBarang(req.params.id, {
@@ -72,7 +113,9 @@ const editBarang = async (req, res) => {
       foto_url
     });
 
-    if (!updatedBarang) return res.status(404).json({ message: 'Barang tidak ditemukan' });
+    if (!updatedBarang) {
+      return res.status(404).json({ message: 'Barang tidak ditemukan' });
+    }
 
     res.json(updatedBarang);
   } catch (err) {
@@ -80,17 +123,37 @@ const editBarang = async (req, res) => {
   }
 };
 
-// =============================
-// DELETE hapus barang
-// =============================
 const removeBarang = async (req, res) => {
   try {
+    // Ambil foto_url sebelum barang dihapus
+    const result = await pool.query(
+      `SELECT foto_url FROM barang WHERE id = $1`,
+      [req.params.id]
+    );
+    const fotoUrl = result.rows[0]?.foto_url;
+
+    // Kalau ada foto di MinIO, hapus
+    if (fotoUrl) {
+      const objectName = decodeURIComponent(
+        fotoUrl.split(`/${bucketName}/`)[1] // ambil path setelah nama bucket
+      );
+      try {
+        await minioClient.removeObject(bucketName, objectName);
+        console.log(`🗑️ File ${objectName} dihapus dari MinIO`);
+      } catch (err) {
+        console.error("Gagal hapus file di MinIO:", err.message);
+      }
+    }
+
+    // Hapus semua riwayat stok dan barang
     await deleteBarang(req.params.id);
-    res.json({ message: 'Barang berhasil dihapus' });
+
+    res.json({ message: 'Barang dan foto berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // =============================
 // GET riwayat stok barang
@@ -105,7 +168,7 @@ const getBarangRiwayat = async (req, res) => {
 };
 
 // =============================
-// GET detail riwayat stok (pakai notaId)
+// GET detail riwayat stok
 // =============================
 const getBarangRiwayatDetail = async (req, res) => {
   try {
@@ -122,7 +185,6 @@ const getBarangRiwayatDetail = async (req, res) => {
   }
 };
 
-
 // =============================
 // DELETE riwayat stok
 // =============================
@@ -135,7 +197,6 @@ const removeBarangRiwayat = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 module.exports = {
   getBarangList,

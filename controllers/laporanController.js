@@ -2,13 +2,10 @@ const pool = require('../config/db');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
-// Laporan Hari Ini
 const getLaporanHariIni = async (req, res) => {
   try {
-    // Ambil tanggal hari ini
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
-    // Stok Masuk
     const stokMasuk = await pool.query(`
       SELECT 
         COALESCE(SUM(d.jumlah), 0) AS total_jumlah,
@@ -18,7 +15,6 @@ const getLaporanHariIni = async (req, res) => {
       WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = $1
     `, [today]);
 
-    // Stok Keluar
     const stokKeluar = await pool.query(`
       SELECT 
         COALESCE(SUM(d.jumlah), 0) AS total_jumlah,
@@ -38,7 +34,6 @@ const getLaporanHariIni = async (req, res) => {
         nominal: parseInt(stokKeluar.rows[0].total_nominal, 10)
       }
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Gagal mengambil laporan hari ini' });
@@ -74,7 +69,7 @@ const getLaporanSemua = async (req, res) => {
           n.nota,
           n.catatan,
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga
@@ -92,7 +87,7 @@ const getLaporanSemua = async (req, res) => {
           n.nota,
           n.catatan,
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           -d.jumlah AS jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga
@@ -110,7 +105,7 @@ const getLaporanSemua = async (req, res) => {
           NULL AS nota,
           n.catatan,
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.selisih AS jumlah,
           NULL AS harga_satuan,
           NULL AS total_harga
@@ -157,7 +152,7 @@ const getLaporanDetail = async (req, res) => {
       detailQuery = `
         SELECT 
           d.barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga
@@ -184,7 +179,7 @@ const getLaporanDetail = async (req, res) => {
       detailQuery = `
         SELECT 
           d.barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           -d.jumlah AS jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga
@@ -206,7 +201,7 @@ const getLaporanDetail = async (req, res) => {
       detailQuery = `
         SELECT 
           d.barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.stok_sistem,
           d.stok_fisik,
           d.selisih AS jumlah
@@ -333,7 +328,7 @@ const getLaporanStok = async (req, res) => {
       WITH pergerakan AS (
         SELECT 
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           b.satuan,
           n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
           'masuk' AS tipe,
@@ -347,7 +342,7 @@ const getLaporanStok = async (req, res) => {
     
         SELECT 
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           b.satuan,
           n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
           'keluar' AS tipe,
@@ -361,7 +356,7 @@ const getLaporanStok = async (req, res) => {
     
         SELECT 
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           b.satuan,
           n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
           'audit' AS tipe,
@@ -450,7 +445,7 @@ const getLaporanTransaksi = async (req, res) => {
           NULL AS pelanggan,
           NULL AS metode,
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga
@@ -472,7 +467,7 @@ const getLaporanTransaksi = async (req, res) => {
           pl.nama_pelanggan AS pelanggan,
           m.nama_metode AS metode,
           b.id AS barang_id,
-          b.nama_barang,
+          CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
           d.jumlah,
           d.harga_satuan,
           (d.harga_satuan * d.jumlah) AS total_harga

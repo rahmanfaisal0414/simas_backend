@@ -19,31 +19,39 @@ const addStokKeluar = async (req, res) => {
     const notaNomor = notaDetail.nota.nota;
     const tanggal = notaDetail.nota.created_at;
 
+    const formatRupiah = (value) => {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0
+      }).format(value);
+    };
+
     const totalHarga = notaDetail.detail.reduce(
       (sum, b) => sum + Number(b.total_harga),
       0
     );
 
-    // 2️⃣ Buat teks nota rapi
-    let notaText = `*Toko Berkah*\nJl. Contoh No. 123, Padang\n`;
-    notaText += `=============================\n`;
+        // 2️⃣ Buat teks nota rapi (versi diperbagus)
+    let notaText = `*TOKO BERKAH*\nJl. Seoekarno-Hatta, Pekanbaru\n`;
+    notaText += `--------------------------------\n`;
     notaText += `*NOTA PEMBELIAN*\n`;
-    notaText += `No Nota : ${notaNomor}\n`;
-    notaText += `Tanggal : ${new Date(tanggal).toLocaleString("id-ID")}\n`;
-    notaText += `Pelanggan : ${pelangganNama}\n`;
-    notaText += `=============================\n`;
+    notaText += `*No Nota*   : ${notaNomor}\n`;
+    notaText += `*Tanggal*   : ${new Date(tanggal).toLocaleString("id-ID")}\n`;
+    notaText += `*Pelanggan* : ${pelangganNama}\n`;
+    notaText += `--------------------------------\n`;
     notaText += `*Daftar Barang:*\n`;
 
     notaDetail.detail.forEach((item, idx) => {
-      notaText += `${idx + 1}. ${item.nama_barang}\n`;
-      notaText += `   x${item.jumlah} @ Rp${item.harga_satuan.toLocaleString("id-ID")}\n`;
-      notaText += `   = Rp${item.total_harga.toLocaleString("id-ID")}\n`;
+      notaText += `${idx + 1} Buahs. *${item.nama_barang}*\n`;
+      notaText += `   ${item.jumlah} x ${formatRupiah(item.harga_satuan)}\n`;
+      notaText += `   = ${formatRupiah(item.total_harga)}\n`;
     });
 
-    notaText += `=============================\n`;
-    notaText += `*Total:* Rp${totalHarga.toLocaleString("id-ID")}\n`;
-    notaText += `=============================\n`;
-    notaText += `Terima kasih telah berbelanja di Toko Berkah!`;
+    notaText += `--------------------------------\n`;
+    notaText += `*Total Bayar*: *Rp${totalHarga.toLocaleString("id-ID")}*\n`;
+    notaText += `--------------------------------\n`;
+    notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;
 
     // 3️⃣ Kirim pesan teks via Fonnte
     if (pelangganNoWa) {

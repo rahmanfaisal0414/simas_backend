@@ -161,7 +161,7 @@ const getRiwayatBarang = async (barangId) => {
         n.id AS nota_id, -- dari nota_stok_masuk
         n.created_at,
         n.nota,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         smd.jumlah
       FROM stok_masuk_detail smd
       JOIN nota_stok_masuk n ON smd.nota_id = n.id
@@ -175,7 +175,7 @@ const getRiwayatBarang = async (barangId) => {
         n.id AS nota_id, -- dari nota_stok_keluar
         n.created_at,
         n.nota,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         -skd.jumlah AS jumlah
       FROM stok_keluar_detail skd
       JOIN nota_stok_keluar n ON skd.nota_id = n.id
@@ -189,7 +189,7 @@ const getRiwayatBarang = async (barangId) => {
         n.id AS nota_id, -- dari nota_audit_stok
         n.created_at,
         NULL AS nota,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         asd.selisih AS jumlah
       FROM audit_stok_detail asd
       JOIN nota_audit_stok n ON asd.nota_id = n.id
@@ -229,7 +229,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
       SELECT 
         d.id,
         d.barang_id,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         d.jumlah,
         d.harga_satuan,
         (d.harga_satuan * d.jumlah) AS total_harga
@@ -257,7 +257,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
       SELECT 
         d.id,
         d.barang_id,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         -d.jumlah AS jumlah,
         d.harga_satuan,
         (d.harga_satuan * d.jumlah) AS total_harga
@@ -280,7 +280,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
       SELECT 
         d.id,
         d.barang_id,
-        b.nama_barang,
+        CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         d.stok_sistem,
         d.stok_fisik,
         d.selisih
