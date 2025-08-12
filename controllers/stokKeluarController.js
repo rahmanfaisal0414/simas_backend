@@ -43,9 +43,13 @@ const addStokKeluar = async (req, res) => {
     notaText += `*Daftar Barang:*\n`;
 
     notaDetail.detail.forEach((item, idx) => {
-      notaText += `${idx + 1} Buahs. *${item.nama_barang}*\n`;
-      notaText += `   ${item.jumlah} x ${formatRupiah(item.harga_satuan)}\n`;
-      notaText += `   = ${formatRupiah(item.total_harga)}\n`;
+      const namaBarang = item.nama_barang;
+      const jumlah = `${item.jumlah}x`.padEnd(5, ' '); // kasih jarak tetap
+      const harga = formatRupiah(item.harga_satuan).padEnd(15, ' ');
+      const total = formatRupiah(item.total_harga);
+
+      notaText += `${idx + 1}. *${namaBarang}*\n`;
+      notaText += `   ${jumlah} @ ${harga} = ${total}\n`;
     });
 
     notaText += `--------------------------------\n`;
