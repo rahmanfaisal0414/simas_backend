@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const moment = require("moment-timezone");
+
 
 const createNotaStokKeluar = async (data) => {
   const client = await pool.connect();
@@ -7,11 +9,14 @@ const createNotaStokKeluar = async (data) => {
 
     const { pelanggan_id, user_id, metode_id, catatan, barang } = data;
 
+    // Ambil waktu sekarang dalam format Asia/Jakarta
+    const nowWIB = moment().tz("Asia/Jakarta").format("YYYY-MM-DD HH:mm:ss");
+
     const notaRes = await client.query(`
-      INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan, created_at)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id, nota, created_at
-    `, [pelanggan_id, user_id, metode_id, catatan]);
+    `, [pelanggan_id, user_id, metode_id, catatan, nowWIB]);
 
     const nota_id = notaRes.rows[0].id;
 
@@ -25,9 +30,9 @@ const createNotaStokKeluar = async (data) => {
       `, [nota_id, barang_id, jumlah, harga_satuan, total_harga]);
 
       await client.query(`
-        UPDATE barang SET stok = stok - $1, updated_at = NOW()
+        UPDATE barang SET stok = stok - $1, updated_at = $3
         WHERE id = $2
-      `, [jumlah, barang_id]);
+      `, [jumlah, barang_id, nowWIB]);
     }
 
     await client.query('COMMIT');
