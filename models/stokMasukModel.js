@@ -1,5 +1,4 @@
 const pool = require('../config/db');
-const moment = require("moment-timezone");
 
 const createNotaStokMasuk = async (data) => {
   const client = await pool.connect();
@@ -8,14 +7,10 @@ const createNotaStokMasuk = async (data) => {
 
     const { pemasok_id, user_id, catatan, barang } = data;
 
-    // Ambil waktu WIB
-    const nowWIB = moment().tz("Asia/Jakarta").format("YYYY-MM-DD HH:mm:ss");
-
     const notaRes = await client.query(
-      `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan, created_at)
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, nota, created_at`,
-      [pemasok_id, user_id, catatan, nowWIB]
+      `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan)
+       VALUES ($1, $2, $3) RETURNING id, nota, created_at`,
+      [pemasok_id, user_id, catatan]
     );
     const nota_id = notaRes.rows[0].id;
 
@@ -30,10 +25,8 @@ const createNotaStokMasuk = async (data) => {
       );
 
       await client.query(
-        `UPDATE barang 
-         SET stok = stok + $1, updated_at = $3 
-         WHERE id = $2`,
-        [jumlah, barang_id, nowWIB]
+        `UPDATE barang SET stok = stok + $1, updated_at = NOW() WHERE id = $2`,
+        [jumlah, barang_id]
       );
     }
 
@@ -50,7 +43,6 @@ const createNotaStokMasuk = async (data) => {
     client.release();
   }
 };
-
 
 const getAllNota = async () => {
   const res = await pool.query(`
