@@ -25,12 +25,32 @@
       </div>
     </div>
 
+    <!-- Filter -->
+    <div class="bg-white rounded-lg shadow p-4 mb-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Tanggal</label>
+        <input type="date" id="filterTanggal" class="w-full border rounded-lg p-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Dari</label>
+        <input type="date" id="filterDari" class="w-full border rounded-lg p-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Sampai</label>
+        <input type="date" id="filterSampai" class="w-full border rounded-lg p-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Cari Kode Nota</label>
+        <input type="text" id="filterKode" placeholder="Misal: NTK001" class="w-full border rounded-lg p-2 text-sm">
+      </div>
+    </div>
+
     <!-- Container -->
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
 
       <!-- Desktop Table -->
       <div class="overflow-x-auto hidden sm:block">
-        <table class="min-w-full text-sm border border-gray-200">
+        <table id="riwayatTable" class="min-w-full text-sm border border-gray-200">
           <thead class="bg-gray-100 text-gray-700">
             <tr>
               <th class="p-3 text-left">Tanggal</th>
@@ -42,15 +62,15 @@
           <tbody>
             <% riwayat.forEach((r, i) => { %>
               <tr class="<%= i % 2 === 0 ? 'bg-white' : 'bg-gray-50' %> border-t hover:bg-blue-50 transition">
-                <td class="p-3"><%= r.tanggal %></td>
-                <td class="p-3 font-medium text-gray-800"><%= r.kode %></td>
+                <td class="p-3 tanggal"><%= r.tanggal %></td>
+                <td class="p-3 font-medium text-gray-800 kode"><%= r.kode %></td>
                 <td class="p-3 text-right font-semibold text-green-600">
                   Rp <%= Number(r.total).toLocaleString('id-ID') %>
                 </td>
                 <td class="p-3 text-center">
                   <a href="/public/nota/<%= r.id %>?sig=<%= r.sig %>"
                      class="inline-block px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700 transition-all">
-                    📜 Lihat Detail
+                    Lihat Detail
                   </a>
                 </td>
               </tr>
@@ -60,19 +80,19 @@
       </div>
 
       <!-- Mobile Card View -->
-      <div class="space-y-4 sm:hidden p-4">
+      <div id="riwayatCards" class="space-y-4 sm:hidden p-4">
         <% riwayat.forEach(r => { %>
-          <div class="bg-white rounded-lg border border-gray-200 p-4 shadow hover:shadow-md transition">
+          <div class="bg-white rounded-lg border border-gray-200 p-4 shadow hover:shadow-md transition card-item">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-sm text-gray-500">📅 <%= r.tanggal %></span>
+              <span class="text-sm text-gray-500 tanggal"><%= r.tanggal %></span>
               <span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded">
                 Rp<%= Number(r.total).toLocaleString('id-ID') %>
               </span>
             </div>
-            <p class="font-semibold text-gray-800 mb-3">🧾 Nota: <%= r.kode %></p>
+            <p class="font-semibold text-gray-800 mb-3 kode">Nota: <%= r.kode %></p>
             <a href="/public/nota/<%= r.id %>?sig=<%= r.sig %>"
                class="block w-full text-center bg-blue-600 text-white text-sm py-2 rounded-lg shadow hover:bg-blue-700 transition">
-              📜 Lihat Detail
+              Lihat Detail
             </a>
           </div>
         <% }) %>
@@ -80,6 +100,46 @@
 
     </div>
   </div>
+
+  <script>
+    function applyFilter() {
+      const tanggal = document.getElementById('filterTanggal').value;
+      const dari = document.getElementById('filterDari').value;
+      const sampai = document.getElementById('filterSampai').value;
+      const kode = document.getElementById('filterKode').value.toLowerCase();
+
+      // Table rows
+      document.querySelectorAll('#riwayatTable tbody tr').forEach(row => {
+        const rowTanggal = row.querySelector('.tanggal').textContent.trim();
+        const rowKode = row.querySelector('.kode').textContent.trim().toLowerCase();
+        let show = true;
+
+        if (tanggal && rowTanggal !== tanggal) show = false;
+        if (dari && rowTanggal < dari) show = false;
+        if (sampai && rowTanggal > sampai) show = false;
+        if (kode && !rowKode.includes(kode)) show = false;
+
+        row.style.display = show ? '' : 'none';
+      });
+
+      // Card view
+      document.querySelectorAll('#riwayatCards .card-item').forEach(card => {
+        const cardTanggal = card.querySelector('.tanggal').textContent.replace('📅','').trim();
+        const cardKode = card.querySelector('.kode').textContent.replace('Nota:','').trim().toLowerCase();
+        let show = true;
+
+        if (tanggal && cardTanggal !== tanggal) show = false;
+        if (dari && cardTanggal < dari) show = false;
+        if (sampai && cardTanggal > sampai) show = false;
+        if (kode && !cardKode.includes(kode)) show = false;
+
+        card.style.display = show ? '' : 'none';
+      });
+    }
+
+    document.querySelectorAll('#filterTanggal, #filterDari, #filterSampai, #filterKode')
+      .forEach(input => input.addEventListener('input', applyFilter));
+  </script>
 
 </body>
 </html>
