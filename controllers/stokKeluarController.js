@@ -46,10 +46,12 @@ const addStokKeluar = async (req, res) => {
 
     notaText += `--------------------------------\n`;
     notaText += `*Total Bayar*: *${formatRupiah(totalHarga)}*\n`;
-    notaText += `--------------------------------\n`;
-    notaText += `Lihat nota online: ${linkNota}\n`;
-    notaText += `Riwayat pembelian: ${linkRiwayat}\n`;
-    notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;
+    notaText += `--------------------------------\n\n`;
+    
+    notaText += `🧾 Lihat nota online:\n${linkNota}\n\n`; 
+    notaText += `📜 Riwayat pembelian:\n${linkRiwayat}\n\n`; 
+    
+    notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;    
 
     // 🔹 Kirim WA
     if (pelangganNoWa) {
