@@ -58,29 +58,64 @@ const getAllNotaKeluar = async () => {
 };
 
 const getNotaKeluarById = async (id) => {
-  const nota = await pool.query(`
+  const notaRes = await pool.query(`
     SELECT 
-      nsk.*, 
-      p.nama_pelanggan, 
-      p.kontak AS no_wa, -- ambil langsung dari tabel pelanggan
-      u.username
+      nsk.id,
+      nsk.nota AS kode,
+      TO_CHAR(nsk.created_at, 'YYYY-MM-DD') AS tanggal,
+      p.id AS pelanggan_id,
+      p.nama_pelanggan,
+      p.kontak AS no_wa,
+      u.username AS kasir
     FROM nota_stok_keluar nsk
     LEFT JOIN pelanggan p ON nsk.pelanggan_id = p.id
     LEFT JOIN users u ON nsk.user_id = u.id
     WHERE nsk.id = $1
   `, [id]);
 
-  const detail = await pool.query(`
-    SELECT d.*, b.nama_barang 
+  if (notaRes.rows.length === 0) return null;
+
+  const detailRes = await pool.query(`
+    SELECT 
+      b.nama_barang,
+      d.jumlah,
+      d.harga_satuan,
+      d.total_harga
     FROM stok_keluar_detail d
     JOIN barang b ON d.barang_id = b.id
     WHERE d.nota_id = $1
   `, [id]);
 
+  const total = detailRes.rows.reduce((sum, item) => sum + Number(item.total_harga), 0);
+
   return {
-    nota: nota.rows[0],
-    detail: detail.rows
+    id: notaRes.rows[0].id,
+    kode: notaRes.rows[0].kode,
+    tanggal: notaRes.rows[0].tanggal,
+    pelanggan_id: notaRes.rows[0].pelanggan_id,
+    nama_pelanggan: notaRes.rows[0].nama_pelanggan,
+    no_wa: notaRes.rows[0].no_wa,
+    kasir: notaRes.rows[0].kasir,
+    detail: detailRes.rows,
+    total
   };
+};
+
+
+const getRiwayatPelanggan = async (pelangganId) => {
+  const res = await pool.query(`
+    SELECT 
+      nsk.id,
+      nsk.nota AS kode,
+      TO_CHAR(nsk.created_at, 'YYYY-MM-DD') AS tanggal,
+      COALESCE(SUM(d.total_harga), 0) AS total
+    FROM nota_stok_keluar nsk
+    LEFT JOIN stok_keluar_detail d ON nsk.id = d.nota_id
+    WHERE nsk.pelanggan_id = $1
+    GROUP BY nsk.id
+    ORDER BY nsk.created_at DESC
+  `, [pelangganId]);
+  return res.rows;
 };
 
 
@@ -117,5 +152,6 @@ module.exports = {
   createNotaStokKeluar,
   getAllNotaKeluar,
   getNotaKeluarById,
-  deleteNotaKeluar
+  deleteNotaKeluar,
+  getRiwayatPelanggan
 };
