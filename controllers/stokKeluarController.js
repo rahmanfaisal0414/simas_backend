@@ -40,8 +40,32 @@ const addStokKeluar = async (req, res) => {
     notaText += `*Daftar Barang:*\n`;
 
     notaDetail.detail.forEach((item, idx) => {
+      const jumlah = item.jumlah || 0;
+      const hargaLembar = item.harga_satuan; // harga asli per lembar
+      const hargaKodi = hargaLembar * 20;
+    
+      const kodi = Math.floor(jumlah / 20);
+      const lembar = jumlah % 20;
+    
+      // Buat daftar pembelian per unit
+      let rincian = [];
+      if (kodi > 0) {
+        rincian.push(`${kodi} kodi (${kodi * 20} lembar) x ${formatRupiah(hargaKodi)}`);
+      }
+      if (lembar > 0) {
+        rincian.push(`${lembar} lembar x ${formatRupiah(hargaLembar)}`);
+      }
+    
+      // Hitung total harga sesuai pembagian
+      const totalHargaItem = (kodi * hargaKodi) + (lembar * hargaLembar);
+    
+      // Format teks
       notaText += `${idx + 1}. *${item.nama_barang}*\n`;
-      notaText += `   ${item.jumlah}x @ ${formatRupiah(item.harga_satuan)} = ${formatRupiah(item.total_harga)}\n`;
+      rincian.forEach(r => {
+        notaText += `    • ${r}\n`;
+      });
+      notaText += `    = *${formatRupiah(totalHargaItem)}*\n`;
+      notaText += `--------------------------------\n`;
     });
 
     notaText += `--------------------------------\n`;

@@ -34,7 +34,6 @@ const createBarang = async (data) => {
     kondisi,
     stok,
     min_stok,
-    satuan,
     harga,
     lokasi,
     catatan,
@@ -43,8 +42,8 @@ const createBarang = async (data) => {
 
   const res = await pool.query(
     `INSERT INTO barang 
-      (nama_barang, kategori_id, kondisi, stok, min_stok, satuan, harga, lokasi, catatan, foto_url, created_at, updated_at) 
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW(),NOW()) 
+        (nama_barang, kategori_id, kondisi, stok, min_stok, harga, lokasi, catatan, foto_url, created_at, updated_at) 
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
      RETURNING *`,
     [
       nama_barang,
@@ -52,7 +51,6 @@ const createBarang = async (data) => {
       kondisi || 'Baru',
       stok || 0,
       min_stok || 0,
-      satuan || '',
       harga || 0,
       lokasi || '',
       catatan || '',
@@ -72,7 +70,6 @@ const updateBarang = async (id, data) => {
     kondisi,
     stok,
     min_stok,
-    satuan,
     harga,
     lokasi,
     catatan,
@@ -81,16 +78,15 @@ const updateBarang = async (id, data) => {
 
   const res = await pool.query(
     `UPDATE barang SET 
-      nama_barang=$1, kategori_id=$2, kondisi=$3, stok=$4, min_stok=$5, satuan=$6,
-      harga=$7, lokasi=$8, catatan=$9, foto_url=$10, updated_at=NOW()
-    WHERE id=$11 RETURNING *`,
+      nama_barang=$1, kategori_id=$2, kondisi=$3, stok=$4, min_stok=$5,
+      harga=$6, lokasi=$7, catatan=$8, foto_url=$9, updated_at=NOW()
+    WHERE id=$10 RETURNING *`,
     [
       nama_barang,
       kategori_id,
       kondisi || 'Baru',
       stok || 0,
       min_stok || 0,
-      satuan || '',
       harga || 0,
       lokasi || '',
       catatan || '',
@@ -144,8 +140,8 @@ const getRiwayatBarang = async (barangId) => {
     `
     SELECT 
       tipe,
-      nota_id, -- ✅ kirim nota_id untuk relasi ke detail
-      created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+      nota_id,
+      created_at AS tanggal,
       nota,
       json_agg(
         json_build_object(
@@ -217,7 +213,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        (n.created_at::timestamp + TIME '00:00') AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+        n.created_at AS tanggal,
         n.nota,
         n.catatan,
         p.nama_pemasok AS pemasok
@@ -243,7 +239,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        (n.created_at::timestamp + TIME '00:00') AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+        n.created_at AS tanggal,
         n.nota,
         n.catatan,
         pl.nama_pelanggan AS pelanggan,
@@ -271,7 +267,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        n.created_at AT TIME ZONE 'Asia/Jakarta' AS tanggal,
+        n.created_at AS tanggal,
         n.catatan
       FROM nota_audit_stok n
       WHERE n.id = $1
@@ -355,6 +351,18 @@ const deleteRiwayat = async (tipe, notaId, barangId) => {
   }
 };
 
+// Ambil barang yang stok <= min_stok
+const getBarangMinStok = async () => {
+  const res = await pool.query(`
+    SELECT id, nama_barang, stok, min_stok, foto_url, kondisi
+    FROM barang
+    WHERE stok <= min_stok
+    ORDER BY stok ASC
+  `);
+  return res.rows;
+};
+
+
 module.exports = {
   getAllBarang,
   getBarangById,
@@ -363,5 +371,6 @@ module.exports = {
   deleteBarang,
   getRiwayatBarang,
   getRiwayatDetail,
-  deleteRiwayat
+  deleteRiwayat,
+  getBarangMinStok
 };

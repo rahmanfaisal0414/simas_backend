@@ -8,7 +8,8 @@ const {
   removeBarang,
   getBarangRiwayat,
   getBarangRiwayatDetail,
-  removeBarangRiwayat
+  removeBarangRiwayat,
+  getBarangMinStokNotif
 } = require('../controllers/barangController');
 const multer = require('multer');
 const path = require('path');
@@ -37,5 +38,6 @@ router.delete('/:id', removeBarang);
 router.get('/:id/riwayat', getBarangRiwayat);
 router.get('/riwayat/:tipe/:notaId/:barangId', getBarangRiwayatDetail);
 router.delete('/riwayat/:tipe/:notaId/:barangId', removeBarangRiwayat);
+router.get('/notif/min-stok', getBarangMinStokNotif);
 
 module.exports = router;

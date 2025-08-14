@@ -6,7 +6,8 @@ const {
   deleteBarang,
   getRiwayatBarang,
   getRiwayatDetail,
-  deleteRiwayat
+  deleteRiwayat,
+  getBarangMinStok
 } = require('../models/barangModel');
 
 const Minio = require('minio');
@@ -198,6 +199,16 @@ const removeBarangRiwayat = async (req, res) => {
   }
 };
 
+// GET daftar barang stok minim
+const getBarangMinStokNotif = async (req, res) => {
+  try {
+    const barang = await getBarangMinStok();
+    res.json(barang);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getBarangList,
   getBarangDetail,
@@ -206,5 +217,6 @@ module.exports = {
   removeBarang,
   getBarangRiwayat,
   getBarangRiwayatDetail,
-  removeBarangRiwayat
+  removeBarangRiwayat,
+  getBarangMinStokNotif
 };

@@ -26,8 +26,6 @@ async function exportLaporanStokExcel(req, res) {
       { header: 'Audit', key: 'total_audit', width: 10 },
       { header: 'Stok Sisa', key: 'stok_sisa', width: 12 },
       { header: 'Min Stok', key: 'min_stok', width: 12 },
-      { header: 'Harga Terakhir', key: 'harga_terakhir', width: 16 },
-      { header: 'Total Harga', key: 'nilai_persediaan', width: 18 },
     ];
 
     ensureHeader(
@@ -45,8 +43,6 @@ async function exportLaporanStokExcel(req, res) {
         total_audit: r.total_audit ?? 0,
         stok_sisa: r.stok_sisa ?? 0,
         min_stok: r.min_stok ?? 0,
-        harga_terakhir: Number(r.harga_terakhir ?? 0), // pastikan number
-        nilai_persediaan: Number(r.nilai_persediaan ?? 0), // pastikan number
       });
     });
 
@@ -88,8 +84,6 @@ async function exportLaporanStokPdf(req, res) {
       { label: 'Audit', key: 'total_audit', width: 40, align: 'right', format: 'number' },
       { label: 'Sisa', key: 'stok_sisa', width: 50, align: 'right', format: 'number' },
       { label: 'Min Stok', key: 'min_stok', width: 50, align: 'right', format: 'number' },
-      { label: 'Harga Terakhir', key: 'harga_terakhir', width: 70, align: 'right', format: 'currency' },
-      { label: 'Total Harga', key: 'nilai_persediaan', width: 80, align: 'right', format: 'currency' },
     ], data.map((r, i) => ({
       no: i + 1,
       nama_barang: r.nama_barang,
@@ -98,8 +92,6 @@ async function exportLaporanStokPdf(req, res) {
       total_audit: r.total_audit ?? 0,
       stok_sisa: r.stok_sisa ?? 0,
       min_stok: r.min_stok ?? 0,
-      harga_terakhir: r.harga_terakhir ?? 0,
-      nilai_persediaan: r.nilai_persediaan ?? 0,
     })));
 
     doc.end();

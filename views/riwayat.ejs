@@ -26,7 +26,7 @@
     </div>
 
     <!-- Filter -->
-    <div class="bg-white rounded-lg shadow p-4 mb-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg shadow p-4 mb-5 grid grid-cols-1 sm:grid-cols-5 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1">Tanggal</label>
         <input type="date" id="filterTanggal" class="w-full border rounded-lg p-2 text-sm">
@@ -43,7 +43,18 @@
         <label class="block text-sm font-medium mb-1">Cari Kode Nota</label>
         <input type="text" id="filterKode" placeholder="Misal: NTK001" class="w-full border rounded-lg p-2 text-sm">
       </div>
+      <div class="flex items-end gap-2">
+        <button onclick="applyFilter()" 
+          class="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow text-sm font-semibold">
+          🔍 Cari
+        </button>
+        <button onclick="resetFilter()" 
+          class="flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg shadow text-sm font-semibold">
+          🔄
+        </button>
+      </div>
     </div>
+
 
     <!-- Container -->
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -107,39 +118,44 @@
       const dari = document.getElementById('filterDari').value;
       const sampai = document.getElementById('filterSampai').value;
       const kode = document.getElementById('filterKode').value.toLowerCase();
-
+  
       // Table rows
       document.querySelectorAll('#riwayatTable tbody tr').forEach(row => {
         const rowTanggal = row.querySelector('.tanggal').textContent.trim();
         const rowKode = row.querySelector('.kode').textContent.trim().toLowerCase();
         let show = true;
-
+  
         if (tanggal && rowTanggal !== tanggal) show = false;
         if (dari && rowTanggal < dari) show = false;
         if (sampai && rowTanggal > sampai) show = false;
         if (kode && !rowKode.includes(kode)) show = false;
-
+  
         row.style.display = show ? '' : 'none';
       });
-
+  
       // Card view
       document.querySelectorAll('#riwayatCards .card-item').forEach(card => {
         const cardTanggal = card.querySelector('.tanggal').textContent.replace('📅','').trim();
         const cardKode = card.querySelector('.kode').textContent.replace('Nota:','').trim().toLowerCase();
         let show = true;
-
+  
         if (tanggal && cardTanggal !== tanggal) show = false;
         if (dari && cardTanggal < dari) show = false;
         if (sampai && cardTanggal > sampai) show = false;
         if (kode && !cardKode.includes(kode)) show = false;
-
+  
         card.style.display = show ? '' : 'none';
       });
     }
-
-    document.querySelectorAll('#filterTanggal, #filterDari, #filterSampai, #filterKode')
-      .forEach(input => input.addEventListener('input', applyFilter));
+  
+    function resetFilter() {
+      document.getElementById('filterTanggal').value = '';
+      document.getElementById('filterDari').value = '';
+      document.getElementById('filterSampai').value = '';
+      document.getElementById('filterKode').value = '';
+      applyFilter();
+    }
   </script>
-
+  
 </body>
 </html>
