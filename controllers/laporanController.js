@@ -4,8 +4,6 @@ const PDFDocument = require('pdfkit');
 
 const getLaporanHariIni = async (req, res) => {
   try {
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
-
     // Barang Masuk
     const stokMasuk = await pool.query(`
       SELECT 
@@ -14,8 +12,8 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_masuk n
       JOIN stok_masuk_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at) = $1
-    `, [today]);
+      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
+    `);
 
     // Barang Keluar
     const stokKeluar = await pool.query(`
@@ -25,10 +23,10 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_keluar n
       JOIN stok_keluar_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at) = $1
-    `, [today]);
+      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
+    `);
 
-    // Hitung total stok sekarang
+    // Total stok sekarang
     const totalStok = await pool.query(`
       SELECT COALESCE(SUM(stok), 0) AS total_stok
       FROM barang
@@ -43,7 +41,9 @@ const getLaporanHariIni = async (req, res) => {
         jumlah: parseInt(stokKeluar.rows[0].total_jumlah, 10),
         nominal: parseInt(stokKeluar.rows[0].total_nominal, 10)
       },
-      jumlahTransaksiBaru: parseInt(stokMasuk.rows[0].total_transaksi, 10) + parseInt(stokKeluar.rows[0].total_transaksi, 10),
+      jumlahTransaksiBaru:
+        parseInt(stokMasuk.rows[0].total_transaksi, 10) +
+        parseInt(stokKeluar.rows[0].total_transaksi, 10),
       totalStokSekarang: parseInt(totalStok.rows[0].total_stok, 10)
     });
   } catch (err) {
@@ -51,6 +51,7 @@ const getLaporanHariIni = async (req, res) => {
     res.status(500).json({ message: 'Gagal mengambil laporan hari ini' });
   }
 };
+
 
 const getLaporanSemua = async (req, res) => {
   try {
