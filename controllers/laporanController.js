@@ -12,7 +12,8 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_masuk n
       JOIN stok_masuk_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
+      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = 
+            DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
     // Barang Keluar
@@ -23,7 +24,8 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_keluar n
       JOIN stok_keluar_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = CURRENT_DATE
+      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = 
+            DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
     // Total stok sekarang
@@ -51,7 +53,6 @@ const getLaporanHariIni = async (req, res) => {
     res.status(500).json({ message: 'Gagal mengambil laporan hari ini' });
   }
 };
-
 
 const getLaporanSemua = async (req, res) => {
   try {
