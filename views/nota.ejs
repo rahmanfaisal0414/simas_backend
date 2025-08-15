@@ -37,25 +37,28 @@
 
     <!-- Fungsi Format -->
     <%
-      const perKodi = 20;
+    const perKodi = 20;
 
-      function formatQty(jumlah) {
-        const kodi = Math.floor(jumlah / perKodi);
-        const satuan = jumlah % perKodi;
-        let parts = [];
-        if (kodi > 0) parts.push(`${kodi} kodi`);
-        if (satuan > 0) parts.push(`${satuan} pcs`);
-        return parts.join(' ');
-      }
+    function formatQty(jumlah) {
+      const kodi = Math.floor(jumlah / perKodi);
+      const satuan = jumlah % perKodi;
+      let parts = [];
+      if (kodi > 0) parts.push(`${kodi} kodi`);
+      if (satuan > 0) parts.push(`${satuan} pcs`);
+      return parts.join(' ');
+    }
 
-      function formatHargaDetail(jumlah, hargaSatuan) {
-        const kodi = Math.floor(jumlah / perKodi);
-        const satuan = jumlah % perKodi;
-        let hargaParts = [];
-        if (kodi > 0) hargaParts.push(`${kodi} kodi x Rp ${(hargaSatuan * perKodi).toLocaleString('id-ID')}`);
-        if (satuan > 0) hargaParts.push(`${satuan} pcs x Rp ${hargaSatuan.toLocaleString('id-ID')}`);
-        return hargaParts.join(' + ');
-      }
+    function formatHargaDetail(jumlah, hargaSatuan) {
+      const kodi = Math.floor(jumlah / perKodi);
+      const satuan = jumlah % perKodi;
+      let hargaParts = [];
+      const formatRp = (val) =>
+        val.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+      if (kodi > 0) hargaParts.push(`${kodi} kodi x Rp ${formatRp(hargaSatuan * perKodi)}`);
+      if (satuan > 0) hargaParts.push(`${satuan} pcs x Rp ${formatRp(hargaSatuan)}`);
+      return hargaParts.join(' + ');
+    }
     %>
 
     <!-- Tabel Barang -->
