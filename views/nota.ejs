@@ -51,26 +51,11 @@
         const parts = [];
         if (kodi > 0) parts.push(`${kodi} kodi`);
         if (pcs > 0) parts.push(`${pcs} pcs`);
-        return parts.join(' ');
-      }
-
-      // hargaSatuan = harga per pcs (sesuai instruksi)
-      function hargaDetail(jumlah, hargaSatuan) {
-        const { kodi, pcs, type } = splitQty(jumlah);
-        const perKodi = hargaSatuan * PER_KODI;
-
-        if (type === 'satuan') {
-          return `1 pcs x Rp ${rp(hargaSatuan)}`;
-        }
-        if (type === 'kodi') {
-          return `${kodi} kodi (${kodi*PER_KODI} pcs) x Rp ${rp(perKodi)}`;
-        }
-        // campuran
-        return `${kodi} kodi (${kodi*PER_KODI} pcs) x Rp ${rp(perKodi)} + ${pcs} pcs x Rp ${rp(hargaSatuan)}`;
+        return parts.join(' + ') || '0 pcs';
       }
 
       function subtotalHitung(jumlah, hargaSatuan) {
-        return jumlah * hargaSatuan; // karena harga satuan = per pcs
+        return Number(jumlah) * Number(hargaSatuan); // harga_satuan = per pcs
       }
 
       function typeBadge(type) {
@@ -101,7 +86,8 @@
           <% nota.detail.forEach((it, i) => {
                const jumlah = Number(it.jumlah || 0);
                const hargaSatuan = Number(it.harga_satuan || 0); // per pcs
-               const { type } = splitQty(jumlah);
+               const { kodi, pcs, type } = splitQty(jumlah);
+               const hargaPerKodi = hargaSatuan * PER_KODI;
                const sub = subtotalHitung(jumlah, hargaSatuan);
           %>
             <tr class="<%= i % 2 === 0 ? 'bg-white' : 'bg-gray-50' %> border-t hover:bg-blue-50 transition">
@@ -113,15 +99,18 @@
               </td>
 
               <td class="p-2 text-right align-top">
-                <div class="font-semibold"><%= qtyLabel(jumlah) || '0 pcs' %></div>
-                <div class="text-[11px] text-gray-500">(<%= jumlah %> pcs)</div>
+                <div class="font-semibold"><%= qtyLabel(jumlah) %></div>
               </td>
 
               <td class="p-2 text-right align-top">
-                <div class="leading-5">
-                  <%= hargaDetail(jumlah, hargaSatuan) %>
-                </div>
-                <div class="text-[11px] text-gray-500 mt-1">/pcs: Rp <%= rp(hargaSatuan) %></div>
+                <% if (type === 'campuran') { %>
+                  <div><%= kodi %> kodi x Rp <%= rp(hargaPerKodi) %></div>
+                  <div>+ <%= pcs %> pcs x Rp <%= rp(hargaSatuan) %></div>
+                <% } else if (type === 'kodi') { %>
+                  <div><%= kodi %> kodi x Rp <%= rp(hargaPerKodi) %></div>
+                <% } else { %>
+                  <div><%= jumlah %> pcs x Rp <%= rp(hargaSatuan) %></div>
+                <% } %>
               </td>
 
               <td class="p-2 text-right align-top font-semibold">
