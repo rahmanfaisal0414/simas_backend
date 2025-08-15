@@ -50,7 +50,7 @@ const addStokKeluar = async (req, res) => {
       // Buat daftar pembelian per unit
       let rincian = [];
       if (kodi > 0) {
-        rincian.push(`${kodi} kodi (${kodi * 20} pcs) x ${formatRupiah(hargaPerKodi)}`);
+        rincian.push(`${kodi} kodi x ${formatRupiah(hargaPerKodi)}`);
       }
       if (pcs > 0) {
         rincian.push(`${pcs} pcs x ${formatRupiah(hargaPerPcs)}`);
