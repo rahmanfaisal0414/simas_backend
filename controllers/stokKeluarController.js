@@ -41,23 +41,22 @@ const addStokKeluar = async (req, res) => {
 
     notaDetail.detail.forEach((item, idx) => {
       const jumlah = item.jumlah || 0;
-      const hargaLembar = item.harga_satuan; // harga asli per lembar
-      const hargaKodi = hargaLembar * 20;
+      const hargaPerPcs = item.harga_satuan; // harga asli per pcs
+      const hargaPerKodi = hargaPerPcs * 20;
     
       const kodi = Math.floor(jumlah / 20);
-      const lembar = jumlah % 20;
+      const pcs = jumlah % 20;
     
       // Buat daftar pembelian per unit
       let rincian = [];
       if (kodi > 0) {
-        rincian.push(`${kodi} kodi (${kodi * 20} Satuan) x ${formatRupiah(hargaKodi)}`);
+        rincian.push(`${kodi} kodi (${kodi * 20} pcs) x ${formatRupiah(hargaPerKodi)}`);
       }
-      if (lembar > 0) {
-        rincian.push(`${lembar} Satuan x ${formatRupiah(hargaLembar)}`);
+      if (pcs > 0) {
+        rincian.push(`${pcs} pcs x ${formatRupiah(hargaPerPcs)}`);
       }
     
-      // Hitung total harga sesuai pembagian
-      const totalHargaItem = (kodi * hargaKodi) + (lembar * hargaLembar);
+      const totalHargaItem = (kodi * hargaPerKodi) + (pcs * hargaPerPcs);
     
       // Format teks
       notaText += `${idx + 1}. *${item.nama_barang}*\n`;
@@ -67,7 +66,7 @@ const addStokKeluar = async (req, res) => {
       notaText += `    = *${formatRupiah(totalHargaItem)}*\n`;
       notaText += `--------------------------------\n`;
     });
-
+    
     notaText += `--------------------------------\n`;
     notaText += `*Total Bayar*: *${formatRupiah(totalHarga)}*\n`;
     notaText += `--------------------------------\n\n`;
