@@ -17,8 +17,6 @@ router.delete('/:tipe/:notaId', deleteLaporan);
 
 router.get('/stok', getLaporanStok);
 router.get('/transaksi', getLaporanTransaksi);
-
-// exports
 router.get('/stok/export/excel', exportLaporanStokExcel);
 router.get('/stok/export/pdf', exportLaporanStokPdf);
 router.get('/transaksi/export/excel', exportLaporanTransaksiExcel);

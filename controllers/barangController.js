@@ -15,7 +15,6 @@ const pool = require('../config/db');
 const fs = require('fs');
 const path = require('path');
 
-// 🔹 Konfigurasi MinIO
 const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT,
   port: parseInt(process.env.MINIO_PORT || '9000'),
@@ -26,7 +25,6 @@ const minioClient = new Minio.Client({
 
 const bucketName = 'barang';
 
-// Pastikan bucket ada
 (async () => {
   try {
     const exists = await minioClient.bucketExists(bucketName);
@@ -39,7 +37,6 @@ const bucketName = 'barang';
   }
 })();
 
-// Helper untuk upload file
 async function uploadToMinio(file) {
   const fileName = `${Date.now()}_${file.originalname}`;
   const filePath = file.path;
@@ -53,9 +50,6 @@ async function uploadToMinio(file) {
   return `${process.env.MINIO_PUBLIC_URL}/${bucketName}/${fileName}`;
 }
 
-// =============================
-// GET daftar barang
-// =============================
 const getBarangList = async (req, res) => {
   try {
     const barang = await getAllBarang();
@@ -65,9 +59,6 @@ const getBarangList = async (req, res) => {
   }
 };
 
-// =============================
-// GET detail barang
-// =============================
 const getBarangDetail = async (req, res) => {
   try {
     const barang = await getBarangById(req.params.id);
@@ -78,9 +69,6 @@ const getBarangDetail = async (req, res) => {
   }
 };
 
-// =============================
-// POST tambah barang
-// =============================
 const addBarang = async (req, res) => {
   try {
     let foto_url = null;
@@ -99,9 +87,6 @@ const addBarang = async (req, res) => {
   }
 };
 
-// =============================
-// PUT update barang
-// =============================
 const editBarang = async (req, res) => {
   try {
     let foto_url = req.body.foto_url || null;
@@ -126,17 +111,15 @@ const editBarang = async (req, res) => {
 
 const removeBarang = async (req, res) => {
   try {
-    // Ambil foto_url sebelum barang dihapus
     const result = await pool.query(
       `SELECT foto_url FROM barang WHERE id = $1`,
       [req.params.id]
     );
     const fotoUrl = result.rows[0]?.foto_url;
 
-    // Kalau ada foto di MinIO, hapus
     if (fotoUrl) {
       const objectName = decodeURIComponent(
-        fotoUrl.split(`/${bucketName}/`)[1] // ambil path setelah nama bucket
+        fotoUrl.split(`/${bucketName}/`)[1]
       );
       try {
         await minioClient.removeObject(bucketName, objectName);
@@ -146,7 +129,6 @@ const removeBarang = async (req, res) => {
       }
     }
 
-    // Hapus semua riwayat stok dan barang
     await deleteBarang(req.params.id);
 
     res.json({ message: 'Barang dan foto berhasil dihapus' });
@@ -155,10 +137,6 @@ const removeBarang = async (req, res) => {
   }
 };
 
-
-// =============================
-// GET riwayat stok barang
-// =============================
 const getBarangRiwayat = async (req, res) => {
   try {
     const riwayat = await getRiwayatBarang(req.params.id);
@@ -168,9 +146,6 @@ const getBarangRiwayat = async (req, res) => {
   }
 };
 
-// =============================
-// GET detail riwayat stok
-// =============================
 const getBarangRiwayatDetail = async (req, res) => {
   try {
     const { tipe, notaId, barangId } = req.params;
@@ -186,9 +161,6 @@ const getBarangRiwayatDetail = async (req, res) => {
   }
 };
 
-// =============================
-// DELETE riwayat stok
-// =============================
 const removeBarangRiwayat = async (req, res) => {
   try {
     const { tipe, notaId, barangId } = req.params;
@@ -199,7 +171,6 @@ const removeBarangRiwayat = async (req, res) => {
   }
 };
 
-// GET daftar barang stok minim
 const getBarangMinStokNotif = async (req, res) => {
   try {
     const barang = await getBarangMinStok();

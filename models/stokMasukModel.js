@@ -73,8 +73,6 @@ const deleteNota = async (id) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
-    // Ambil semua barang yang akan dihapus
     const detailRes = await client.query(`
       SELECT barang_id, jumlah FROM stok_masuk_detail
       WHERE nota_id = $1

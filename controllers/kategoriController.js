@@ -1,6 +1,5 @@
 const { getAllKategori, createKategori, deleteKategori } = require('../models/kategoriModel');
 
-// GET semua kategori
 const getKategori = async (req, res) => {
     try {
         const kategori = await getAllKategori();
@@ -11,7 +10,6 @@ const getKategori = async (req, res) => {
     }
 };
 
-// POST tambah kategori
 const addKategori = async (req, res) => {
     try {
         const { nama_kategori } = req.body;
@@ -26,7 +24,6 @@ const addKategori = async (req, res) => {
     }
 };
 
-// DELETE kategori
 const removeKategori = async (req, res) => {
     try {
         const { id } = req.params;

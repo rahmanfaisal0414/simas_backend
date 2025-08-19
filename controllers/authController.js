@@ -80,12 +80,9 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-// New Password
 const newPassword = async (req, res) => {
     try {
         const { email, password, otp } = req.body;
-
-        // Pastikan ada OTP valid di DB
         const otpData = await findOtp(email, otp);
         if (!otpData) {
             return res.status(400).json({ message: 'OTP belum diverifikasi atau kadaluarsa' });
@@ -94,7 +91,6 @@ const newPassword = async (req, res) => {
         const hashed = await bcrypt.hash(password, 10);
         await updatePassword(email, hashed);
 
-        // Hapus OTP setelah reset password
         await deleteOtp(email);
 
         res.json({ message: 'Password berhasil direset' });
@@ -133,15 +129,12 @@ const changePassword = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { oldPassword, newPassword } = req.body;
 
-    // Ambil data user berdasarkan ID
     const user = await findUserById(decoded.id);
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-    // Cek password lama
     const valid = await bcrypt.compare(oldPassword, user.password);
     if (!valid) return res.status(400).json({ message: 'Password lama salah' });
 
-    // Hash password baru
     const hashed = await bcrypt.hash(newPassword, 10);
     await updatePasswordById(user.id, hashed);
 

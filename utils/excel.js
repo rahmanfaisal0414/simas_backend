@@ -1,15 +1,9 @@
 const ExcelJS = require('exceljs');
 
-/**
- * Membuat header judul + subjudul + freeze header
- */
 function ensureHeader(ws, title, subtitle) {
   const lastColLetter = ws.getColumn(ws.columnCount).letter;
 
-  // Geser isi tabel ke bawah 2 baris
   ws.spliceRows(1, 0, [], []);
-
-  // Judul
   ws.mergeCells(`A1:${lastColLetter}1`);
   const titleCell = ws.getCell('A1');
   titleCell.value = title;
@@ -19,7 +13,6 @@ function ensureHeader(ws, title, subtitle) {
     type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F5597' }
   };
 
-  // Subjudul
   ws.mergeCells(`A2:${lastColLetter}2`);
   const subCell = ws.getCell('A2');
   subCell.value = subtitle || '';
@@ -29,7 +22,6 @@ function ensureHeader(ws, title, subtitle) {
     type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAEAEA' }
   };
 
-  // Style header tabel (row 4)
   ws.getRow(4).eachCell(cell => {
     cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
@@ -40,30 +32,22 @@ function ensureHeader(ws, title, subtitle) {
     };
   });
 
-  // Freeze pane di bawah header
   ws.views = [{ state: 'frozen', ySplit: 4 }];
-
-  // Auto filter
   ws.autoFilter = {
     from: { row: 4, column: 1 },
     to: { row: 4, column: ws.columnCount }
   };
 }
 
-/**
- * Memberikan border, zebra style, format harga, dan auto-fit kolom mulai dari startRow
- */
 function zebraAndBorders(ws, startRow) {
   ws.eachRow((row, rowNumber) => {
     if (rowNumber >= startRow) {
       row.eachCell((cell, colNumber) => {
-        // Border
         cell.border = {
           top: { style: 'thin' }, left: { style: 'thin' },
           bottom: { style: 'thin' }, right: { style: 'thin' }
         };
 
-        // Format harga otomatis jika kolom mengandung kata "harga" atau "total"
         const headerValue = ws.getRow(startRow - 1).getCell(colNumber).value?.toString().toLowerCase() || '';
         if (headerValue.includes('harga') || headerValue.includes('total')) {
           if (!isNaN(cell.value)) {
@@ -73,7 +57,6 @@ function zebraAndBorders(ws, startRow) {
         }
       });
 
-      // Zebra striping
       if ((rowNumber - startRow) % 2 === 0) {
         row.fill = {
           type: 'pattern', pattern: 'solid',
@@ -83,14 +66,13 @@ function zebraAndBorders(ws, startRow) {
     }
   });
 
-  // Auto-fit kolom
   ws.columns.forEach(col => {
     let maxLength = 0;
     col.eachCell({ includeEmpty: true }, cell => {
       const val = cell.value ? cell.value.toString() : '';
       maxLength = Math.max(maxLength, val.length);
     });
-    col.width = Math.min(maxLength + 2, 50); // batas maksimal lebar
+    col.width = Math.min(maxLength + 2, 50);
   });
 }
 

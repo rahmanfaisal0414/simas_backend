@@ -20,11 +20,9 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Set EJS view engine
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // <-- tambahkan ini
+app.set('views', path.join(__dirname, 'views')); 
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/kategori', kategoriRoutes);
 app.use('/api/metode-pembayaran', metodePembayaranRoutes);
@@ -36,7 +34,6 @@ app.use('/api/stok-keluar', stokKeluarRoutes);
 app.use('/api/stok-audit', stokAuditRoutes); 
 app.use('/api/laporan', laporanRoutes);
 
-// Public routes (halaman nota & riwayat pelanggan)
 app.use('/public', publicRoutes);
 
 const PORT = process.env.PORT || 5000;

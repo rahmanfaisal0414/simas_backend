@@ -21,10 +21,9 @@ async function renderRiwayat(req, res) {
   const pelangganId = req.params.pelangganId;
   const riwayatData = await getRiwayatPelanggan(pelangganId);
 
-  // 🔹 Tambahkan signature untuk tiap nota
   const riwayat = riwayatData.map(item => ({
     ...item,
-    sig: generateSig(pelangganId) // semua nota dalam riwayat milik pelanggan yang sama
+    sig: generateSig(pelangganId) 
   }));
 
   res.render('riwayat', { riwayat });

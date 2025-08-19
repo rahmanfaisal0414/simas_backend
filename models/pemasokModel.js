@@ -13,7 +13,6 @@ const createPemasok = async (nama, kontak, alamat, catatan) => {
   return res.rows[0];
 };
 
-// Update pelanggan
 const updatePemasok = async (id, nama, kontak, alamat, catatan) => {
   const res = await pool.query(
     `UPDATE pemasok

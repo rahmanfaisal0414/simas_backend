@@ -1,6 +1,5 @@
 const { getAllMetode, createMetode, deleteMetode } = require('../models/metodePembayaranModel');
 
-// GET semua metode pembayaran
 const getMetode = async (req, res) => {
     try {
         const metode = await getAllMetode();
@@ -11,7 +10,6 @@ const getMetode = async (req, res) => {
     }
 };
 
-// POST tambah metode pembayaran
 const addMetode = async (req, res) => {
     try {
         const { nama_metode } = req.body;
@@ -26,7 +24,6 @@ const addMetode = async (req, res) => {
     }
 };
 
-// DELETE metode pembayaran
 const removeMetode = async (req, res) => {
     try {
         const { id } = req.params;

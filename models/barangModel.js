@@ -1,16 +1,10 @@
 const pool = require('../config/db');
 
-// =============================
-// Ambil semua barang
-// =============================
 const getAllBarang = async () => {
   const res = await pool.query('SELECT * FROM barang ORDER BY id DESC');
   return res.rows;
 };
 
-// =============================
-// Ambil detail barang
-// =============================
 const getBarangById = async (id) => {
   const res = await pool.query(
     `SELECT 
@@ -24,9 +18,6 @@ const getBarangById = async (id) => {
   return res.rows[0];
 };
 
-// =============================
-// Tambah barang baru
-// =============================
 const createBarang = async (data) => {
   const {
     nama_barang,
@@ -60,9 +51,6 @@ const createBarang = async (data) => {
   return res.rows[0];
 };
 
-// =============================
-// Update barang
-// =============================
 const updateBarang = async (id, data) => {
   const {
     nama_barang,
@@ -97,20 +85,10 @@ const updateBarang = async (id, data) => {
   return res.rows[0];
 };
 
-// =============================
-// Hapus barang
-// =============================
 const deleteBarang = async (id) => {
-  // Hapus semua riwayat stok masuk detail
   await pool.query(`DELETE FROM stok_masuk_detail WHERE barang_id = $1`, [id]);
-
-  // Hapus semua riwayat stok keluar detail
   await pool.query(`DELETE FROM stok_keluar_detail WHERE barang_id = $1`, [id]);
-
-  // Hapus semua riwayat audit stok detail
   await pool.query(`DELETE FROM audit_stok_detail WHERE barang_id = $1`, [id]);
-
-  // (Opsional) hapus nota yang tidak punya detail lagi
   await pool.query(`
     DELETE FROM nota_stok_masuk
     WHERE id NOT IN (SELECT DISTINCT nota_id FROM stok_masuk_detail)
@@ -124,17 +102,9 @@ const deleteBarang = async (id) => {
     WHERE id NOT IN (SELECT DISTINCT nota_id FROM audit_stok_detail)
   `);
 
-  // Terakhir hapus barangnya
   await pool.query(`DELETE FROM barang WHERE id = $1`, [id]);
 };
 
-
-// =============================
-// Ambil riwayat stok barang
-// =============================
-// =============================
-// Ambil riwayat stok barang
-// =============================
 const getRiwayatBarang = async (barangId) => {
   const res = await pool.query(
     `
@@ -201,10 +171,6 @@ const getRiwayatBarang = async (barangId) => {
   return res.rows;
 };
 
-
-// =============================
-// Ambil detail riwayat stok
-// =============================
 async function getRiwayatDetail(tipe, notaId, barangId) {
   let headerQuery = "";
   let detailQuery = "";
@@ -302,9 +268,6 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
   };
 }
 
-// =============================
-// Hapus riwayat stok
-// =============================
 const deleteRiwayat = async (tipe, notaId, barangId) => {
   let table = '';
   let jumlah = 0;
@@ -336,8 +299,7 @@ const deleteRiwayat = async (tipe, notaId, barangId) => {
     if (res.rows.length) {
       const { stok_sistem, stok_fisik } = res.rows[0];
       const selisih = stok_fisik - stok_sistem;
-  
-      // rollback selisih → kurangi atau tambah stok sekarang
+
       await pool.query(
         `UPDATE barang SET stok = stok - $1 WHERE id = $2`,
         [selisih, barangId]
@@ -351,7 +313,6 @@ const deleteRiwayat = async (tipe, notaId, barangId) => {
   }
 };
 
-// Ambil barang yang stok <= min_stok
 const getBarangMinStok = async () => {
   const res = await pool.query(`
     SELECT id, nama_barang, stok, min_stok, foto_url, kondisi

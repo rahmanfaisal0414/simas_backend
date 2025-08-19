@@ -4,7 +4,6 @@ const PDFDocument = require('pdfkit');
 
 const getLaporanHariIni = async (req, res) => {
   try {
-    // Barang Masuk
     const stokMasuk = await pool.query(`
       SELECT 
         COALESCE(SUM(d.jumlah), 0) AS total_jumlah,
@@ -16,7 +15,6 @@ const getLaporanHariIni = async (req, res) => {
             DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
-    // Barang Keluar
     const stokKeluar = await pool.query(`
       SELECT 
         COALESCE(SUM(d.jumlah), 0) AS total_jumlah,
@@ -28,7 +26,6 @@ const getLaporanHariIni = async (req, res) => {
             DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
-    // Total stok sekarang
     const totalStok = await pool.query(`
       SELECT COALESCE(SUM(stok), 0) AS total_stok
       FROM barang
@@ -138,7 +135,6 @@ const getLaporanSemua = async (req, res) => {
   }
 };
 
-// ===== Detail per nota (semua barang di nota tsb) =====
 const getLaporanDetail = async (req, res) => {
   try {
     const { tipe, notaId } = req.params;
@@ -149,7 +145,7 @@ const getLaporanDetail = async (req, res) => {
 
     let headerQuery = '';
     let detailQuery = '';
-    let totalExpr = ''; // untuk hitung total_jumlah
+    let totalExpr = ''; 
 
     if (tipe === 'masuk') {
       headerQuery = `
@@ -189,7 +185,6 @@ const getLaporanDetail = async (req, res) => {
         LEFT JOIN metode_pembayaran m ON m.id = n.metode_id
         WHERE n.id = $1
       `;
-      // jumlah negatif agar konsisten dengan list
       detailQuery = `
         SELECT 
           d.barang_id,
@@ -203,7 +198,6 @@ const getLaporanDetail = async (req, res) => {
       `;
       totalExpr = 'SUM(-d.jumlah)';
     } else {
-      // audit
       headerQuery = `
         SELECT 
           n.id AS nota_id,
@@ -223,7 +217,7 @@ const getLaporanDetail = async (req, res) => {
         JOIN barang b ON b.id = d.barang_id
         WHERE d.nota_id = $1
       `;
-      totalExpr = 'SUM(jumlah)'; // ✅ pakai jumlah, bukan d.selisih
+      totalExpr = 'SUM(jumlah)'; 
     }    
 
     const headerRes = await pool.query(headerQuery, [notaId]);
@@ -250,7 +244,6 @@ const getLaporanDetail = async (req, res) => {
   }
 };
 
-// ===== Hapus satu nota + rollback stok =====
 const deleteLaporan = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -263,7 +256,6 @@ const deleteLaporan = async (req, res) => {
     await client.query('BEGIN');
 
     if (tipe === 'masuk') {
-      // kembalikan stok (kurangi kembali)
       const { rows } = await client.query(
         `SELECT barang_id, jumlah FROM stok_masuk_detail WHERE nota_id = $1`,
         [notaId]
@@ -277,7 +269,6 @@ const deleteLaporan = async (req, res) => {
       await client.query(`DELETE FROM stok_masuk_detail WHERE nota_id = $1`, [notaId]);
       await client.query(`DELETE FROM nota_stok_masuk WHERE id = $1`, [notaId]);
     } else if (tipe === 'keluar') {
-      // kembalikan stok (tambah kembali)
       const { rows } = await client.query(
         `SELECT barang_id, jumlah FROM stok_keluar_detail WHERE nota_id = $1`,
         [notaId]
@@ -291,7 +282,6 @@ const deleteLaporan = async (req, res) => {
       await client.query(`DELETE FROM stok_keluar_detail WHERE nota_id = $1`, [notaId]);
       await client.query(`DELETE FROM nota_stok_keluar WHERE id = $1`, [notaId]);
     } else {
-      // audit: hitung selisih, rollback hanya selisih audit
       const { rows } = await client.query(
         `SELECT barang_id, stok_sistem, stok_fisik 
          FROM audit_stok_detail 
@@ -300,8 +290,7 @@ const deleteLaporan = async (req, res) => {
       );
     
       for (const r of rows) {
-        const selisih = r.stok_fisik - r.stok_sistem; // perubahan yang dilakukan saat audit
-        // rollback selisih ini
+        const selisih = r.stok_fisik - r.stok_sistem; 
         await client.query(
           `UPDATE barang SET stok = stok - $1 WHERE id = $2`,
           [selisih, r.barang_id]
@@ -323,9 +312,6 @@ const deleteLaporan = async (req, res) => {
   }
 };
 
-// =============================
-// LAPORAN STOK (semua pergerakan stok)
-// =============================
 const getLaporanStok = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -401,10 +387,6 @@ const getLaporanStok = async (req, res) => {
   }
 };
 
-
-// =============================
-// LAPORAN TRANSAKSI (hanya masuk & keluar)
-// =============================
 const getLaporanTransaksi = async (req, res) => {
   try {
     const { startDate, endDate, tipe } = req.query;
@@ -553,9 +535,6 @@ async function _queryLaporanStok(startDate, endDate) {
   return rows;
 }
 
-// =============================
-// _queryLaporanTransaksi (Revisi)
-// =============================
 async function _queryLaporanTransaksi(startDate, endDate, tipe) {
   const params = [];
   const filters = [];
@@ -626,7 +605,6 @@ async function _queryLaporanTransaksi(startDate, endDate, tipe) {
   return rows;
 }
 
-// di akhir file
 module.exports = {
   getLaporanHariIni,
   getLaporanSemua,

@@ -14,9 +14,6 @@ const {
 const multer = require('multer');
 const path = require('path');
 
-// =============================
-// Konfigurasi upload foto
-// =============================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/barang');
@@ -27,9 +24,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// =============================
-// Endpoint CRUD Barang
-// =============================
 router.get('/', getBarangList);
 router.get('/:id', getBarangDetail);
 router.post('/', upload.single('foto'), addBarang);

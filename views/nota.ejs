@@ -11,7 +11,6 @@
 <body class="bg-gray-50 text-gray-900">
   <div class="max-w-3xl mx-auto p-4 md:p-6">
 
-    <!-- Header -->
     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg p-4 md:p-6">
       <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
         <div>
@@ -25,14 +24,12 @@
       </div>
     </div>
 
-    <!-- Info Pelanggan -->
     <div class="bg-white rounded-lg shadow p-5 mt-4">
       <h2 class="font-semibold text-lg text-blue-600 mb-2">Pelanggan</h2>
       <p class="text-gray-800 break-words"><%= nota.nama_pelanggan %></p>
       <p class="text-gray-500 text-sm break-words"><%= nota.no_wa %></p>
     </div>
 
-    <!-- Helpers -->
     <%
       const PER_KODI = 20;
       const rp = (v) => Number(v).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -57,7 +54,7 @@
       function typeBadge(type) {
         if (type === 'kodi') return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
         if (type === 'campuran') return 'bg-amber-50 text-amber-700 border border-amber-200';
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-200'; // satuan
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200'; 
       }
       function typeText(type) {
         if (type === 'kodi') return 'Kodi';
@@ -66,7 +63,6 @@
       }
     %>
 
-    <!-- ================= Desktop / Tablet (Table) ================= -->
     <div class="bg-white rounded-lg shadow p-4 mt-4 overflow-x-auto hidden sm:block">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100">
@@ -80,7 +76,7 @@
         <tbody>
           <% nota.detail.forEach((it, i) => {
                const jumlah = Number(it.jumlah || 0);
-               const hargaSatuan = Number(it.harga_satuan || 0); // per pcs
+               const hargaSatuan = Number(it.harga_satuan || 0); 
                const { kodi, pcs, type } = splitQty(jumlah);
                const hargaPerKodi = hargaSatuan * PER_KODI;
                const subtotal = jumlah * hargaSatuan;
@@ -126,7 +122,6 @@
       </table>
     </div>
 
-    <!-- ================= Mobile (Cards) ================= -->
     <div class="sm:hidden space-y-3 mt-4">
       <% nota.detail.forEach((it) => {
            const jumlah = Number(it.jumlah || 0);
@@ -171,7 +166,6 @@
       </div>
     </div>
 
-    <!-- Tombol Aksi -->
     <div class="mt-6 flex flex-col sm:flex-row gap-3">
       <a href="/public/pelanggan/<%= nota.pelanggan_id %>?sig=<%= sig %>"
         class="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">

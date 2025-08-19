@@ -1,7 +1,6 @@
 const { getAllPelanggan, createPelanggan, deletePelanggan, updatePelanggan } = require('../models/pelangganModel');
 
 function isValidWhatsAppNumber(number) {
-  // Hanya angka, mulai dengan 62, panjang 10-15 digit
   return /^62[0-9]{8,13}$/.test(number);
 }
 

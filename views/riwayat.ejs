@@ -14,7 +14,6 @@
 
   <div class="max-w-6xl mx-auto p-4 md:p-6">
 
-    <!-- Header -->
     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-md p-5 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-2xl font-bold">Riwayat Pembelian</h1>
@@ -25,7 +24,6 @@
       </div>
     </div>
 
-    <!-- Filter -->
     <div class="bg-white rounded-lg shadow p-4 mb-5 grid grid-cols-1 sm:grid-cols-5 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1">Tanggal</label>
@@ -56,10 +54,7 @@
     </div>
 
 
-    <!-- Container -->
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-
-      <!-- Desktop Table -->
       <div class="overflow-x-auto hidden sm:block">
         <table id="riwayatTable" class="min-w-full text-sm border border-gray-200">
           <thead class="bg-gray-100 text-gray-700">
@@ -90,7 +85,6 @@
         </table>
       </div>
 
-      <!-- Mobile Card View -->
       <div id="riwayatCards" class="space-y-4 sm:hidden p-4">
         <% riwayat.forEach(r => { %>
           <div class="bg-white rounded-lg border border-gray-200 p-4 shadow hover:shadow-md transition card-item">
@@ -119,7 +113,6 @@
       const sampai = document.getElementById('filterSampai').value;
       const kode = document.getElementById('filterKode').value.toLowerCase();
   
-      // Table rows
       document.querySelectorAll('#riwayatTable tbody tr').forEach(row => {
         const rowTanggal = row.querySelector('.tanggal').textContent.trim();
         const rowKode = row.querySelector('.kode').textContent.trim().toLowerCase();
@@ -133,7 +126,6 @@
         row.style.display = show ? '' : 'none';
       });
   
-      // Card view
       document.querySelectorAll('#riwayatCards .card-item').forEach(card => {
         const cardTanggal = card.querySelector('.tanggal').textContent.replace('📅','').trim();
         const cardKode = card.querySelector('.kode').textContent.replace('Nota:','').trim().toLowerCase();

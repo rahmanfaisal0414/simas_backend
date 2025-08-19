@@ -19,17 +19,12 @@ const addStokKeluar = async (req, res) => {
       new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
 
     const totalHarga = notaDetail.total;
-
-    // 🔹 Generate signature pendek
     const sigNota = generateSig(notaId);
     const sigRiwayat = generateSig(pelangganId);
-
-    // 🔹 Link publik
     const baseUrl = process.env.PUBLIC_BASE_URL || 'http://localhost:5000/public';
     const linkNota = `${baseUrl}/nota/${notaId}?sig=${sigNota}`;
     const linkRiwayat = `${baseUrl}/pelanggan/${pelangganId}?sig=${sigRiwayat}`;
 
-    // 🔹 Format teks nota
     let notaText = `*TOKO BERKAH*\nJl. Seoekarno-Hatta, Pekanbaru\n`;
     notaText += `--------------------------------\n`;
     notaText += `*NOTA PEMBELIAN*\n`;
@@ -41,13 +36,12 @@ const addStokKeluar = async (req, res) => {
 
     notaDetail.detail.forEach((item, idx) => {
       const jumlah = item.jumlah || 0;
-      const hargaPerPcs = item.harga_satuan; // harga asli per pcs
+      const hargaPerPcs = item.harga_satuan;
       const hargaPerKodi = hargaPerPcs * 20;
     
       const kodi = Math.floor(jumlah / 20);
       const pcs = jumlah % 20;
     
-      // Buat daftar pembelian per unit
       let rincian = [];
       if (kodi > 0) {
         rincian.push(`${kodi} kodi x ${formatRupiah(hargaPerKodi)}`);
@@ -58,7 +52,6 @@ const addStokKeluar = async (req, res) => {
     
       const totalHargaItem = (kodi * hargaPerKodi) + (pcs * hargaPerPcs);
     
-      // Format teks
       notaText += `${idx + 1}. *${item.nama_barang}*\n`;
       rincian.forEach(r => {
         notaText += `    • ${r}\n`;
@@ -76,7 +69,6 @@ const addStokKeluar = async (req, res) => {
     
     notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;    
 
-    // 🔹 Kirim WA
     if (pelangganNoWa) {
       const formData = new FormData();
       formData.append("target", pelangganNoWa);

@@ -3,16 +3,16 @@ require('dotenv').config();
 
 /**
  * Mengirim email
- * @param {string} to - Alamat email tujuan
- * @param {string} subject - Subjek email
- * @param {string} content - Konten email (bisa HTML atau teks biasa)
- * @param {boolean} isHtml - Jika true maka content dianggap HTML
- * @returns {Promise<boolean>} - true jika berhasil, false jika gagal
+ * @param {string} to 
+ * @param {string} subject
+ * @param {string} content 
+ * @param {boolean} isHtml
+ * @returns {Promise<boolean>}
  */
 const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // bisa ganti SMTP lain jika perlu
+      service: 'gmail', 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -25,7 +25,6 @@ const sendEmail = async (to, subject, content, isHtml = false) => {
       subject
     };
 
-    // Tentukan apakah mengirim HTML atau teks
     if (isHtml) {
       mailOptions.html = content;
     } else {

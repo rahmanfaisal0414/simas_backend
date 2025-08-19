@@ -12,7 +12,6 @@ const createAuditDetail = async (nota_id, detail) => {
   for (const item of detail) {
     const { barang_id, stok_sistem, stok_fisik } = item;
 
-    // Insert ke audit_stok_detail
     await pool.query(
       `INSERT INTO audit_stok_detail (nota_id, barang_id, stok_sistem, stok_fisik)
        VALUES ($1, $2, $3, $4)`,

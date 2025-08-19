@@ -1,5 +1,5 @@
 const { ExcelJS, ensureHeader, zebraAndBorders } = require('../utils/excel');
-const { makeDoc, drawTable } = require('../utils/pdf'); // pdf.js sudah pakai style baru
+const { makeDoc, drawTable } = require('../utils/pdf'); 
 const { _queryLaporanStok, _queryLaporanTransaksi } = require('./laporanController');
 
 const fmtTanggal = (d) => new Intl.DateTimeFormat('id-ID', {
@@ -48,9 +48,8 @@ async function exportLaporanStokExcel(req, res) {
 
     zebraAndBorders(ws, 4);
 
-    // Format rupiah untuk kolom harga
-    ws.getColumn(8).numFmt = '"Rp" #,##0'; // harga_terakhir
-    ws.getColumn(9).numFmt = '"Rp" #,##0'; // nilai_persediaan
+    ws.getColumn(8).numFmt = '"Rp" #,##0'; 
+    ws.getColumn(9).numFmt = '"Rp" #,##0'; 
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=laporan_stok_${Date.now()}.xlsx`);
@@ -114,7 +113,6 @@ async function exportLaporanTransaksiExcel(req, res) {
       properties: { defaultRowHeight: 18 }
     });
 
-    // Definisi kolom
     ws.columns = [
       { header: 'No', key: 'no', width: 5 },
       { header: 'Tipe', key: 'tipe', width: 10 },
@@ -127,16 +125,13 @@ async function exportLaporanTransaksiExcel(req, res) {
       { header: 'Nominal', key: 'nominal', width: 18 }
     ];
 
-    // Subjudul laporan
     const subtitle = [
       startDate && endDate ? `Periode: ${startDate} s/d ${endDate}` : 'Semua Periode',
       tipe ? `Tipe: ${tipe}` : null
     ].filter(Boolean).join(' | ');
 
-    // Tambahkan header & subheader
     ensureHeader(ws, 'LAPORAN TRANSAKSI', subtitle);
 
-    // Isi data
     data.forEach((r, i) => {
       ws.addRow({
         no: i + 1,
@@ -146,19 +141,16 @@ async function exportLaporanTransaksiExcel(req, res) {
         relasi: r.relasi || '-',
         nama_barang: r.nama_barang,
         jumlah: r.jumlah,
-        harga_satuan: Number(r.harga_satuan || 0), // pastikan number agar format harga jalan
+        harga_satuan: Number(r.harga_satuan || 0), 
         nominal: Number(r.nominal || 0)
       });
     });
 
-    // Style tabel & format harga
     zebraAndBorders(ws, 4);
 
-    // Format harga otomatis (kolom harga_satuan dan nominal)
     ws.getColumn('harga_satuan').numFmt = '"Rp" #,##0';
     ws.getColumn('nominal').numFmt = '"Rp" #,##0';
 
-    // Kirim file ke client
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=laporan_transaksi_${Date.now()}.xlsx`);
     await wb.xlsx.write(res);
