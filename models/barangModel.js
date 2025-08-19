@@ -9,7 +9,15 @@ const getBarangById = async (id) => {
   const res = await pool.query(
     `SELECT 
         b.*, 
-        k.nama_kategori 
+        k.nama_kategori,
+        (
+          SELECT d.harga_satuan
+          FROM stok_masuk_detail d
+          JOIN nota_stok_masuk n ON d.nota_id = n.id
+          WHERE d.barang_id = b.id
+          ORDER BY n.created_at DESC
+          LIMIT 1
+        ) AS harga_beli_terbaru
      FROM barang b
      LEFT JOIN kategori_barang k ON b.kategori_id = k.id 
      WHERE b.id = $1`,
@@ -17,6 +25,7 @@ const getBarangById = async (id) => {
   );
   return res.rows[0];
 };
+
 
 const createBarang = async (data) => {
   const {
