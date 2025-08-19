@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const path = require('path');
 
+const verifyToken = require('./middleware/authMiddleware');
 const authRoutes = require('./routes/authRoutes');
 const kategoriRoutes = require('./routes/kategoriRoutes');
 const metodePembayaranRoutes = require('./routes/metodePembayaranRoutes');
@@ -24,15 +25,15 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views')); 
 
 app.use('/api/auth', authRoutes);
-app.use('/api/kategori', kategoriRoutes);
-app.use('/api/metode-pembayaran', metodePembayaranRoutes);
-app.use('/api/pelanggan', pelangganRoutes);
-app.use('/api/pemasok', pemasokRoutes);
-app.use('/api/barang', barangRoutes);
-app.use('/api/stok-masuk', stokMasukRoutes);
-app.use('/api/stok-keluar', stokKeluarRoutes);
-app.use('/api/stok-audit', stokAuditRoutes); 
-app.use('/api/laporan', laporanRoutes);
+app.use('/api/kategori', verifyToken, kategoriRoutes);
+app.use('/api/metode-pembayaran', verifyToken, metodePembayaranRoutes);
+app.use('/api/pelanggan', verifyToken, pelangganRoutes);
+app.use('/api/pemasok', verifyToken, pemasokRoutes);
+app.use('/api/barang', verifyToken, barangRoutes);
+app.use('/api/stok-masuk', verifyToken, stokMasukRoutes);
+app.use('/api/stok-keluar', verifyToken, stokKeluarRoutes);
+app.use('/api/stok-audit', verifyToken, stokAuditRoutes); 
+app.use('/api/laporan', verifyToken, laporanRoutes);
 
 app.use('/public', publicRoutes);
 
