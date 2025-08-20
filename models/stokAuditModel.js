@@ -19,7 +19,6 @@ const createAuditDetail = async (nota_id, detail) => {
        VALUES ($1, $2, $3, $4)`,
       [nota_id, barang_id, stok_sistem, stok_fisik]
     );
-s
     await pool.query(
       `UPDATE barang SET stok = $1, updated_at = NOW() WHERE id = $2`,
       [stok_fisik, barang_id]
