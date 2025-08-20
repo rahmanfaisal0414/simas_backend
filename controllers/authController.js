@@ -1,37 +1,46 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/sendEmail');
-const { findUserByEmail, updatePassword, findUserById, updatePasswordById  } = require('../models/userModel');
+const { findUserByEmail, updatePassword, findUserById, updatePasswordById, findUserByUsername  } = require('../models/userModel');
 const { saveOtp, findOtp, deleteOtp } = require('../models/otpModel');
 require('dotenv').config();
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await findUserByEmail(email);
-        if (!user) return res.status(400).json({ message: 'Email tidak ditemukan' });
-
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return res.status(400).json({ message: 'Password salah' });
-
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
-        res.json({
-            user_id: user.id,
-            token,
-            username: user.username,
-            email: user.email || '',
-            avatar_url: user.avatar_url || '/uploads/avatars/base_profil.png'
-        });
+      const { identifier, password } = req.body; 
+  
+      let user = await findUserByEmail(identifier);
+  
+      if (!user) {
+        user = await findUserByUsername(identifier);
+      }
+  
+      if (!user) {
+        return res.status(400).json({ message: 'Email/Username tidak ditemukan' });
+      }
+  
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(400).json({ message: 'Password salah' });
+  
+      const token = jwt.sign(
+        { id: user.id, email: user.email, username: user.username },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+  
+      res.json({
+        user_id: user.id,
+        token,
+        username: user.username,
+        email: user.email || '',
+        avatar_url: user.avatar_url || '/uploads/avatars/base_profil.png'
+      });
     } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ message: 'Terjadi kesalahan server' });
+      console.error("Login Error:", err);
+      res.status(500).json({ message: 'Terjadi kesalahan server' });
     }
-};
+  };
+  
 
 const forgotPassword = async (req, res) => {
     try {

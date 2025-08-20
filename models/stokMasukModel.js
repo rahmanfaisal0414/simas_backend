@@ -7,7 +7,6 @@ const createNotaStokMasuk = async (data) => {
 
     const { pemasok_id, user_id, catatan, barang } = data;
 
-    // isi tanggal dengan NOW() supaya bukan hanya date 00:00:00
     const notaRes = await client.query(
       `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan, tanggal)
        VALUES ($1, $2, $3, NOW())
