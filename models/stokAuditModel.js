@@ -4,7 +4,7 @@ const createStokAudit = async (user_id, catatan) => {
   const result = await pool.query(
     `INSERT INTO nota_audit_stok (user_id, catatan, tanggal) 
      VALUES ($1, $2, NOW()) 
-     RETURNING id, tanggal, created_at`,
+     RETURNING id, tanggal`,
     [user_id, catatan]
   );  
   return result.rows[0];

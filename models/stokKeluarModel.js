@@ -10,7 +10,7 @@ const createNotaStokKeluar = async (data) => {
     const notaRes = await client.query(`
       INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan, tanggal)
       VALUES ($1, $2, $3, $4, NOW())
-      RETURNING id, nota, tanggal, created_at
+      RETURNING id, nota, tanggal
     `, [pelanggan_id, user_id, metode_id, catatan]);
 
     const nota_id = notaRes.rows[0].id;
@@ -36,7 +36,6 @@ const createNotaStokKeluar = async (data) => {
       id: notaRes.rows[0].id,
       nota: notaRes.rows[0].nota,
       tanggal: notaRes.rows[0].tanggal,     
-      created_at: notaRes.rows[0].created_at 
     };
     
   } catch (err) {

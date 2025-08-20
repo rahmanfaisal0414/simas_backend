@@ -10,7 +10,7 @@ const createNotaStokMasuk = async (data) => {
     const notaRes = await client.query(
       `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan, tanggal)
        VALUES ($1, $2, $3, NOW())
-       RETURNING id, nota, tanggal, created_at`,
+       RETURNING id, nota, tanggal`,
       [pemasok_id, user_id, catatan]
     );
     const nota_id = notaRes.rows[0].id;
@@ -36,7 +36,6 @@ const createNotaStokMasuk = async (data) => {
       message: 'Stok masuk berhasil disimpan',
       nota: notaRes.rows[0].nota,
       tanggal: notaRes.rows[0].tanggal,  
-      created_at: notaRes.rows[0].created_at 
     };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -87,7 +86,6 @@ const deleteNota = async (id) => {
       `, [item.jumlah, item.barang_id]);
     }
 
-    // Hapus nota (otomatis hapus detail karena ON DELETE CASCADE)
     await client.query('DELETE FROM nota_stok_masuk WHERE id = $1', [id]);
 
     await client.query('COMMIT');
