@@ -11,7 +11,7 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_masuk n
       JOIN stok_masuk_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = 
+      WHERE DATE(n.tanggal AT TIME ZONE 'Asia/Jakarta') = 
             DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
@@ -22,7 +22,7 @@ const getLaporanHariIni = async (req, res) => {
         COUNT(DISTINCT n.id) AS total_transaksi
       FROM nota_stok_keluar n
       JOIN stok_keluar_detail d ON n.id = d.nota_id
-      WHERE DATE(n.created_at AT TIME ZONE 'Asia/Jakarta') = 
+      WHERE DATE(n.tanggal AT TIME ZONE 'Asia/Jakarta') = 
             DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
     `);
 
@@ -76,7 +76,7 @@ const getLaporanSemua = async (req, res) => {
         SELECT 
           'masuk' AS tipe,
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           b.id AS barang_id,
@@ -94,7 +94,7 @@ const getLaporanSemua = async (req, res) => {
         SELECT 
           'keluar' AS tipe,
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           b.id AS barang_id,
@@ -112,7 +112,7 @@ const getLaporanSemua = async (req, res) => {
         SELECT 
           'audit' AS tipe,
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           NULL AS nota,
           n.catatan,
           b.id AS barang_id,
@@ -151,7 +151,7 @@ const getLaporanDetail = async (req, res) => {
       headerQuery = `
         SELECT 
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           p.nama_pemasok AS pemasok
@@ -175,7 +175,7 @@ const getLaporanDetail = async (req, res) => {
       headerQuery = `
         SELECT 
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           pl.nama_pelanggan AS pelanggan,
@@ -201,7 +201,7 @@ const getLaporanDetail = async (req, res) => {
       headerQuery = `
         SELECT 
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.catatan
         FROM nota_audit_stok n
         WHERE n.id = $1
@@ -329,7 +329,7 @@ const getLaporanStok = async (req, res) => {
         SELECT 
           b.id AS barang_id,
           CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           'masuk' AS tipe,
           d.jumlah,
           d.harga_satuan
@@ -342,7 +342,7 @@ const getLaporanStok = async (req, res) => {
         SELECT 
           b.id AS barang_id,
           CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           'keluar' AS tipe,
           -d.jumlah AS jumlah,
           d.harga_satuan
@@ -355,7 +355,7 @@ const getLaporanStok = async (req, res) => {
         SELECT 
           b.id AS barang_id,
           CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           'audit' AS tipe,
           d.selisih AS jumlah,
           NULL AS harga_satuan
@@ -430,7 +430,7 @@ const getLaporanTransaksi = async (req, res) => {
         SELECT 
           'masuk' AS tipe,
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           p.nama_pemasok AS pemasok,
@@ -452,7 +452,7 @@ const getLaporanTransaksi = async (req, res) => {
         SELECT 
           'keluar' AS tipe,
           n.id AS nota_id,
-          n.created_at AS tanggal,
+          n.tanggal AS tanggal,
           n.nota,
           n.catatan,
           NULL AS pemasok,
@@ -493,7 +493,7 @@ async function _queryLaporanStok(startDate, endDate) {
   const { rows } = await pool.query(`
     WITH pergerakan AS (
       SELECT b.id AS barang_id, b.nama_barang,
-             n.created_at AS tanggal,
+             n.tanggal AS tanggal,
              'masuk' AS tipe, d.jumlah
       FROM nota_stok_masuk n
       JOIN stok_masuk_detail d ON d.nota_id = n.id
@@ -502,7 +502,7 @@ async function _queryLaporanStok(startDate, endDate) {
       UNION ALL
 
       SELECT b.id, b.nama_barang,
-             n.created_at, 'keluar',
+             n.tanggal, 'keluar',
              -d.jumlah
       FROM nota_stok_keluar n
       JOIN stok_keluar_detail d ON d.nota_id = n.id
@@ -511,7 +511,7 @@ async function _queryLaporanStok(startDate, endDate) {
       UNION ALL
 
       SELECT b.id, b.nama_barang,
-             n.created_at, 'audit',
+             n.tanggal, 'audit',
              d.selisih
       FROM nota_audit_stok n
       JOIN audit_stok_detail d ON d.nota_id = n.id
@@ -569,7 +569,7 @@ async function _queryLaporanTransaksi(startDate, endDate, tipe) {
       -- stok masuk
       SELECT 
         'masuk' AS tipe,
-        n.created_at AS tanggal,
+        n.tanggal AS tanggal,
         n.nota,
         p.nama_pemasok AS pemasok,
         NULL AS pelanggan,
@@ -586,7 +586,7 @@ async function _queryLaporanTransaksi(startDate, endDate, tipe) {
       -- stok keluar
       SELECT 
         'keluar',
-        n.created_at,
+        n.tanggal,
         n.nota,
         NULL,
         pl.nama_pelanggan,

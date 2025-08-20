@@ -15,7 +15,7 @@ const getBarangById = async (id) => {
           FROM stok_masuk_detail d
           JOIN nota_stok_masuk n ON d.nota_id = n.id
           WHERE d.barang_id = b.id
-          ORDER BY n.created_at DESC
+          ORDER BY n.tanggal DESC
           LIMIT 1
         ) AS harga_beli_terbaru
      FROM barang b
@@ -25,7 +25,6 @@ const getBarangById = async (id) => {
   );
   return res.rows[0];
 };
-
 
 const createBarang = async (data) => {
   const {
@@ -120,7 +119,7 @@ const getRiwayatBarang = async (barangId) => {
     SELECT 
       tipe,
       nota_id,
-      created_at AS tanggal,
+      tanggal,
       nota,
       json_agg(
         json_build_object(
@@ -134,7 +133,7 @@ const getRiwayatBarang = async (barangId) => {
       SELECT 
         'masuk' AS tipe,
         n.id AS nota_id, -- dari nota_stok_masuk
-        n.created_at,
+        n.tanggal,
         n.nota,
         CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         smd.jumlah
@@ -148,7 +147,7 @@ const getRiwayatBarang = async (barangId) => {
       SELECT 
         'keluar' AS tipe,
         n.id AS nota_id, -- dari nota_stok_keluar
-        n.created_at,
+        n.tanggal,
         n.nota,
         CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         -skd.jumlah AS jumlah
@@ -162,7 +161,7 @@ const getRiwayatBarang = async (barangId) => {
       SELECT 
         'audit' AS tipe,
         n.id AS nota_id, -- dari nota_audit_stok
-        n.created_at,
+        n.tanggal,
         NULL AS nota,
         CONCAT(b.nama_barang, ' (', b.kondisi, ')') AS nama_barang,
         asd.selisih AS jumlah
@@ -171,8 +170,8 @@ const getRiwayatBarang = async (barangId) => {
       JOIN barang b ON asd.barang_id = b.id
       WHERE b.id = $1
     ) AS combined
-    GROUP BY tipe, nota_id, created_at, nota
-    ORDER BY created_at DESC
+    GROUP BY tipe, nota_id, tanggal, nota
+    ORDER BY tanggal DESC
     `,
     [barangId]
   );
@@ -188,7 +187,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        n.created_at AS tanggal,
+        n.tanggal AS tanggal,
         n.nota,
         n.catatan,
         p.nama_pemasok AS pemasok
@@ -214,7 +213,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        n.created_at AS tanggal,
+        n.tanggal AS tanggal,
         n.nota,
         n.catatan,
         pl.nama_pelanggan AS pelanggan,
@@ -242,7 +241,7 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
     headerQuery = `
       SELECT 
         n.id AS nota_id,
-        n.created_at AS tanggal,
+        n.tanggal AS tanggal,
         n.catatan
       FROM nota_audit_stok n
       WHERE n.id = $1

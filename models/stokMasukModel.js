@@ -7,9 +7,11 @@ const createNotaStokMasuk = async (data) => {
 
     const { pemasok_id, user_id, catatan, barang } = data;
 
+    // isi tanggal dengan NOW() supaya bukan hanya date 00:00:00
     const notaRes = await client.query(
-      `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan)
-       VALUES ($1, $2, $3) RETURNING id, nota, created_at`,
+      `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan, tanggal)
+       VALUES ($1, $2, $3, NOW())
+       RETURNING id, nota, tanggal, created_at`,
       [pemasok_id, user_id, catatan]
     );
     const nota_id = notaRes.rows[0].id;
@@ -34,7 +36,8 @@ const createNotaStokMasuk = async (data) => {
     return {
       message: 'Stok masuk berhasil disimpan',
       nota: notaRes.rows[0].nota,
-      created_at: notaRes.rows[0].created_at
+      tanggal: notaRes.rows[0].tanggal,  
+      created_at: notaRes.rows[0].created_at 
     };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -50,7 +53,7 @@ const getAllNota = async () => {
     FROM nota_stok_masuk nsm
     LEFT JOIN pemasok p ON nsm.pemasok_id = p.id
     LEFT JOIN users u ON nsm.user_id = u.id
-    ORDER BY nsm.created_at DESC
+    ORDER BY nsm.tanggal DESC
   `);
   return res.rows;
 };
@@ -58,7 +61,8 @@ const getAllNota = async () => {
 const getNotaById = async (id) => {
   const nota = await pool.query('SELECT * FROM nota_stok_masuk WHERE id = $1', [id]);
   const detail = await pool.query(`
-    SELECT d.*, b.nama_barang FROM stok_masuk_detail d
+    SELECT d.*, b.nama_barang 
+    FROM stok_masuk_detail d
     JOIN barang b ON d.barang_id = b.id
     WHERE d.nota_id = $1
   `, [id]);
@@ -96,7 +100,6 @@ const deleteNota = async (id) => {
     client.release();
   }
 };
-
 
 module.exports = {
   createNotaStokMasuk,

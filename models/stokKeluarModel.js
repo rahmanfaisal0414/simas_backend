@@ -8,9 +8,9 @@ const createNotaStokKeluar = async (data) => {
     const { pelanggan_id, user_id, metode_id, catatan, barang } = data;
 
     const notaRes = await client.query(`
-      INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, nota, created_at
+      INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan, tanggal)
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING id, nota, tanggal, created_at
     `, [pelanggan_id, user_id, metode_id, catatan]);
 
     const nota_id = notaRes.rows[0].id;
@@ -35,7 +35,8 @@ const createNotaStokKeluar = async (data) => {
       message: 'Stok keluar berhasil disimpan',
       id: notaRes.rows[0].id,
       nota: notaRes.rows[0].nota,
-      created_at: notaRes.rows[0].created_at
+      tanggal: notaRes.rows[0].tanggal,     
+      created_at: notaRes.rows[0].created_at 
     };
     
   } catch (err) {
@@ -52,7 +53,7 @@ const getAllNotaKeluar = async () => {
     FROM nota_stok_keluar nsk
     LEFT JOIN pelanggan p ON nsk.pelanggan_id = p.id
     LEFT JOIN users u ON nsk.user_id = u.id
-    ORDER BY nsk.created_at DESC
+    ORDER BY nsk.tanggal DESC
   `);
   return res.rows;
 };
@@ -62,7 +63,7 @@ const getNotaKeluarById = async (id) => {
     SELECT 
       nsk.id,
       nsk.nota AS kode,
-      TO_CHAR(nsk.created_at, 'YYYY-MM-DD') AS tanggal,
+      TO_CHAR(nsk.tanggal, 'YYYY-MM-DD HH24:MI:SS') AS tanggal,
       p.id AS pelanggan_id,
       p.nama_pelanggan,
       p.kontak AS no_wa,
@@ -101,24 +102,21 @@ const getNotaKeluarById = async (id) => {
   };
 };
 
-
 const getRiwayatPelanggan = async (pelangganId) => {
   const res = await pool.query(`
     SELECT 
       nsk.id,
       nsk.nota AS kode,
-      TO_CHAR(nsk.created_at, 'YYYY-MM-DD') AS tanggal,
+      TO_CHAR(nsk.tanggal, 'YYYY-MM-DD HH24:MI:SS') AS tanggal,
       COALESCE(SUM(d.total_harga), 0) AS total
     FROM nota_stok_keluar nsk
     LEFT JOIN stok_keluar_detail d ON nsk.id = d.nota_id
     WHERE nsk.pelanggan_id = $1
     GROUP BY nsk.id
-    ORDER BY nsk.created_at DESC
+    ORDER BY nsk.tanggal DESC
   `, [pelangganId]);
   return res.rows;
 };
-
-
 
 const deleteNotaKeluar = async (id) => {
   const client = await pool.connect();
