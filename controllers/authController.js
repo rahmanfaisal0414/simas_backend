@@ -1,15 +1,22 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/sendEmail');
-const { findUserByEmail, updatePassword, findUserById, updatePasswordById  } = require('../models/userModel');
+const { findUserByEmail, updatePassword, findUserById, updatePasswordById, findUserByUsername } = require('../models/userModel');
 const { saveOtp, findOtp, deleteOtp } = require('../models/otpModel');
 require('dotenv').config();
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await findUserByEmail(email);
-        if (!user) return res.status(400).json({ message: 'Email tidak ditemukan' });
+        const { identifier, password } = req.body; 
+
+        let user;
+        if (identifier.includes('@')) {
+            user = await findUserByEmail(identifier);
+        } else {
+            user = await findUserByUsername(identifier);
+        }
+
+        if (!user) return res.status(400).json({ message: 'User tidak ditemukan' });
 
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(400).json({ message: 'Password salah' });
