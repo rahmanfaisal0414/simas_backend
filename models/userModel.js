@@ -10,16 +10,6 @@ const findUserByUsername = async (username) => {
   return res.rows[0];
 };
 
-const createUser = async (username, email, hashedPassword) => {
-  const res = await pool.query(
-    `INSERT INTO users (username, email, password) 
-     VALUES ($1, $2, $3) 
-     RETURNING id, username, email, created_at`,
-    [username, email, hashedPassword]
-  );
-  return res.rows[0];
-};
-
 const updatePassword = async (email, hashedPassword) => {
   const res = await pool.query(
     `UPDATE users 
@@ -51,7 +41,6 @@ const updatePasswordById = async (id, hashedPassword) => {
 module.exports = {
   findUserByEmail,
   findUserByUsername,
-  createUser,
   updatePassword,
   updatePasswordById,
   findUserById
