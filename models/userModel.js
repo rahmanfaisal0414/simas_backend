@@ -5,6 +5,11 @@ const findUserByEmail = async (email) => {
   return res.rows[0];
 };
 
+const findUserByGoogleId = async (googleId) => {
+  const res = await pool.query('SELECT * FROM users WHERE google_id = $1 LIMIT 1', [googleId]);
+  return res.rows[0];
+};
+
 const findUserByUsername = async (username) => {
   const res = await pool.query('SELECT * FROM users WHERE username = $1 LIMIT 1', [username]);
   return res.rows[0];
@@ -40,6 +45,7 @@ const updatePasswordById = async (id, hashedPassword) => {
 
 module.exports = {
   findUserByEmail,
+  findUserByGoogleId,
   findUserByUsername,
   updatePassword,
   updatePasswordById,

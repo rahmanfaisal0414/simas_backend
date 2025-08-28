@@ -1,5 +1,5 @@
 const express = require('express');
-const { login, forgotPassword, verifyOtp, newPassword, getProfile, changePassword } = require('../controllers/authController');
+const { login, forgotPassword, verifyOtp, newPassword, getProfile, changePassword, loginWithGoogle} = require('../controllers/authController');
 const { otpLimiter } = require('../middleware/rateLimit');
 const validateEmail = require('../middleware/validateEmail');
 const validatePassword = require('../middleware/validatePassword');
@@ -11,6 +11,7 @@ router.post('/verify-otp', verifyOtp);
 router.post('/new-password', validatePassword, newPassword);
 router.get('/profile', getProfile);
 router.put('/change-password', changePassword);
+router.post('/google', loginWithGoogle);
 
 
 module.exports = router;

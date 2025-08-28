@@ -1,9 +1,66 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const pool = require('../config/db');
 const sendEmail = require('../utils/sendEmail');
-const { findUserByEmail, updatePassword, findUserById, updatePasswordById, findUserByUsername } = require('../models/userModel');
+const { findUserByEmail, updatePassword, findUserById, updatePasswordById, findUserByUsername, findUserByGoogleId } = require('../models/userModel');
 const { saveOtp, findOtp, deleteOtp } = require('../models/otpModel');
 require('dotenv').config();
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const loginWithGoogle = async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    if (!id_token) return res.status(400).json({ message: 'id_token diperlukan' });
+
+    const ticket = await client.verifyIdToken({
+      idToken: id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name || email.split('@')[0];
+    const picture = payload.picture || '/uploads/avatars/base_profil.png';
+
+    let user = await findUserByGoogleId(googleId);
+
+    if (!user && email) {
+      user = await findUserByEmail(email);
+      if (user) {
+        await pool.query(
+          `UPDATE users SET google_id = $1, provider = 'google' WHERE id = $2`,
+          [googleId, user.id]
+        );
+        user.google_id = googleId;
+        user.provider = 'google';
+      }
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'Email belum terdaftar, silakan daftar manual.' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      user_id: user.id,
+      username: user.username || name,
+      email: user.email,
+      avatar_url: user.avatar_url || picture,
+      token,
+    });
+  } catch (err) {
+    console.error("Google Login Error:", err);
+    res.status(500).json({ message: 'Login dengan Google gagal' });
+  }
+};
 
 const login = async (req, res) => {
     try {
@@ -153,4 +210,4 @@ const changePassword = async (req, res) => {
 };
 
 
-module.exports = { login, forgotPassword, verifyOtp, newPassword, getProfile, changePassword };
+module.exports = { login, forgotPassword, verifyOtp, newPassword, getProfile, changePassword, loginWithGoogle };
