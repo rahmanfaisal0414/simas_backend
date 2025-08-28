@@ -12,53 +12,51 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const loginWithGoogle = async (req, res) => {
   try {
     const { id_token } = req.body;
-    if (!id_token) return res.status(400).json({ message: 'id_token diperlukan' });
+    if (!id_token) return res.status(400).json({ message: 'Token tidak ada' });
 
     const ticket = await client.verifyIdToken({
       idToken: id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+
+
     const payload = ticket.getPayload();
-
-    const googleId = payload.sub;
-    const email = payload.email;
-    const name = payload.name || email.split('@')[0];
-    const picture = payload.picture || '/uploads/avatars/base_profil.png';
-
-    let user = await findUserByGoogleId(googleId);
-
-    if (!user && email) {
-      user = await findUserByEmail(email);
-      if (user) {
-        await pool.query(
-          `UPDATE users SET google_id = $1, provider = 'google' WHERE id = $2`,
-          [googleId, user.id]
-        );
-        user.google_id = googleId;
-        user.provider = 'google';
-      }
-    }
+    const googleId = payload['sub'];
+    const email = payload['email'];
+    const name = payload['name'];
+    const picture = payload['picture'];
 
     if (!user) {
-      return res.status(404).json({ message: 'Email belum terdaftar, silakan daftar manual.' });
+      const result = await pool.query(
+        `INSERT INTO users (google_id, email, username, avatar_url) 
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, username, email, avatar_url`,
+        [googleId, email, name, picture]
+      );
+      user = result.rows[0];
+    }    
+
+    let user = await findUserByGoogleId(googleId);
+    if (!user) {
+      user = await findUserByEmail(email);
     }
 
-    const token = jwt.sign(
+    const jwtToken = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '2d' }
     );
 
-    res.json({
+    return res.json({
+      message: 'Login Google berhasil',
+      token: jwtToken,
       user_id: user.id,
-      username: user.username || name,
+      username: user.username,
       email: user.email,
-      avatar_url: user.avatar_url || picture,
-      token,
-    });
+      avatar_url: user.avatar_url
+    });    
   } catch (err) {
-    console.error("Google Login Error:", err);
-    res.status(500).json({ message: 'Login dengan Google gagal' });
+    return res.status(400).json({ message: 'Google login gagal', error: err.message });
   }
 };
 
