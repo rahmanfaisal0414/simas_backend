@@ -1,64 +1,59 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
+const admin = require("../config/firebase");
 const pool = require('../config/db');
 const sendEmail = require('../utils/sendEmail');
 const { findUserByEmail, updatePassword, findUserById, updatePasswordById, findUserByUsername, findUserByGoogleId } = require('../models/userModel');
 const { saveOtp, findOtp, deleteOtp } = require('../models/otpModel');
 require('dotenv').config();
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const loginWithGoogle = async (req, res) => {
-  try {
-    const { id_token } = req.body;
-    if (!id_token) return res.status(400).json({ message: 'Token tidak ada' });
-
-    const ticket = await client.verifyIdToken({
-      idToken: id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-
-    const payload = ticket.getPayload();
-    const googleId = payload['sub'];
-    const email = payload['email'];
-    const name = payload['name'];
-    const picture = payload['picture'];
-
-    if (!user) {
-      const result = await pool.query(
-        `INSERT INTO users (google_id, email, username, avatar_url) 
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, username, email, avatar_url`,
-        [googleId, email, name, picture]
+    try {
+      const { id_token } = req.body;  
+      if (!id_token) return res.status(400).json({ message: "Token tidak ada" });
+  
+      // Verifikasi token ke Firebase
+      const decoded = await admin.auth().verifyIdToken(id_token);
+  
+      const googleId = decoded.uid;
+      const email = decoded.email;
+      const name = decoded.name || email.split("@")[0];
+      const picture = decoded.picture || "/uploads/avatars/base_profil.png";
+  
+      let user = await findUserByGoogleId(googleId);
+      if (!user) {
+        user = await findUserByEmail(email);
+      }
+  
+      if (!user) {
+        const result = await pool.query(
+          `INSERT INTO users (google_id, email, username, avatar_url)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id, username, email, avatar_url`,
+          [googleId, email, name, picture]
+        );
+        user = result.rows[0];
+      }
+  
+      const jwtToken = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "2d" }
       );
-      user = result.rows[0];
-    }    
-
-    let user = await findUserByGoogleId(googleId);
-    if (!user) {
-      user = await findUserByEmail(email);
+  
+      return res.json({
+        message: "Login Google berhasil",
+        token: jwtToken,
+        user_id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar_url: user.avatar_url,
+      });
+    } catch (err) {
+      console.error("Google Login Error:", err);
+      return res.status(401).json({ message: "Login gagal", error: err.message });
     }
-
-    const jwtToken = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '2d' }
-    );
-
-    return res.json({
-      message: 'Login Google berhasil',
-      token: jwtToken,
-      user_id: user.id,
-      username: user.username,
-      email: user.email,
-      avatar_url: user.avatar_url
-    });    
-  } catch (err) {
-    return res.status(400).json({ message: 'Google login gagal', error: err.message });
-  }
-};
+  };
 
 const login = async (req, res) => {
     try {
