@@ -15,6 +15,7 @@ const stokKeluarRoutes = require('./routes/stokKeluarRoutes');
 const stokAuditRoutes = require('./routes/stokAuditRoutes'); 
 const laporanRoutes = require('./routes/laporanRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 app.use(cors());
@@ -34,6 +35,7 @@ app.use('/api/stok-masuk', verifyToken, stokMasukRoutes);
 app.use('/api/stok-keluar', verifyToken, stokKeluarRoutes);
 app.use('/api/stok-audit', verifyToken, stokAuditRoutes); 
 app.use('/api/laporan', verifyToken, laporanRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use('/public', publicRoutes);
 
