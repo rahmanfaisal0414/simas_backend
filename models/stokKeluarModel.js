@@ -5,13 +5,13 @@ const createNotaStokKeluar = async (data) => {
   try {
     await client.query('BEGIN');
 
-    const { pelanggan_id, user_id, metode_id, catatan, barang } = data;
+    const { pelanggan_id, user_id, metode_id, catatan, barang, tanggal } = data;
 
     const notaRes = await client.query(`
       INSERT INTO nota_stok_keluar (pelanggan_id, user_id, metode_id, catatan, tanggal)
-      VALUES ($1, $2, $3, $4, NOW())
+      VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, NOW()))
       RETURNING id, nota, tanggal
-    `, [pelanggan_id, user_id, metode_id, catatan]);
+    `, [pelanggan_id, user_id, metode_id, catatan, tanggal || null]);
 
     const nota_id = notaRes.rows[0].id;
 
