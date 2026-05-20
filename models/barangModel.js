@@ -47,7 +47,7 @@ const createBarang = async (data) => {
     [
       nama_barang,
       kategori_id,
-      kondisi || 'Baru',
+      kondisi || 'New',
       stok || 0,
       min_stok || 0,
       harga || 0,
@@ -80,7 +80,7 @@ const updateBarang = async (id, data) => {
     [
       nama_barang,
       kategori_id,
-      kondisi || 'Baru',
+      kondisi || 'New',
       stok || 0,
       min_stok || 0,
       harga || 0,
