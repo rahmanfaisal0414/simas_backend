@@ -1,7 +1,16 @@
 const { getAllPelanggan, createPelanggan, deletePelanggan, updatePelanggan } = require('../models/pelangganModel');
 
+function normalizeWhatsAppNumber(number) {
+  if (!number) return "";
+
+  return String(number)
+    .trim()
+    .replace(/[^\d]/g, "");
+}
+
 function isValidWhatsAppNumber(number) {
-  return /^62[0-9]{8,13}$/.test(number);
+  const clean = normalizeWhatsAppNumber(number);
+  return /^[1-9][0-9]{9,14}$/.test(clean);
 }
 
 const getPelanggan = async (req, res) => {
@@ -15,10 +24,13 @@ const getPelanggan = async (req, res) => {
 
 const addPelanggan = async (req, res) => {
   try {
-    const { nama_pelanggan, kontak, alamat, catatan } = req.body;
+    let { nama_pelanggan, kontak, alamat, catatan } = req.body;
+      kontak = normalizeWhatsAppNumber(kontak);
     if (!nama_pelanggan) return res.status(400).json({ message: 'Nama wajib diisi' });
     if (!kontak || !isValidWhatsAppNumber(kontak)) {
-      return res.status(400).json({ message: 'Nomor WhatsApp tidak valid. Gunakan format 62xxxxxxxxxx' });
+      return res.status(400).json({ 
+        message: 'Nomor WhatsApp tidak valid. Gunakan format kode negara, contoh 601123456789 atau 628123456789' 
+      });
     }
 
     const data = await createPelanggan(nama_pelanggan, kontak, alamat, catatan);
@@ -41,11 +53,14 @@ const removePelanggan = async (req, res) => {
 const editPelanggan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nama_pelanggan, kontak, alamat, catatan } = req.body;
+    let { nama_pelanggan, kontak, alamat, catatan } = req.body;
+      kontak = normalizeWhatsAppNumber(kontak);
 
     if (!nama_pelanggan) return res.status(400).json({ message: 'Nama wajib diisi' });
     if (!kontak || !isValidWhatsAppNumber(kontak)) {
-      return res.status(400).json({ message: 'Nomor WhatsApp tidak valid. Gunakan format 62xxxxxxxxxx' });
+      return res.status(400).json({ 
+        message: 'Nomor WhatsApp tidak valid. Gunakan format kode negara, contoh 601123456789 atau 628123456789' 
+      });
     }
 
     const pelanggan = await updatePelanggan(id, nama_pelanggan, kontak, alamat, catatan);

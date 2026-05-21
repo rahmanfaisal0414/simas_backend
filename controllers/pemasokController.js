@@ -1,7 +1,17 @@
 const { getAllPemasok, createPemasok, deletePemasok, updatePemasok } = require('../models/pemasokModel');
 
+function normalizeWhatsAppNumber(number) {
+  if (!number) return "";
+
+  return String(number)
+    .trim()
+    .replace(/[^\d]/g, "");
+}
+
 function isValidWhatsAppNumber(number) {
-  return /^62[0-9]{8,13}$/.test(number);
+  const clean = normalizeWhatsAppNumber(number);
+
+  return /^[1-9][0-9]{9,14}$/.test(clean);
 }
 
 const getPemasok = async (req, res) => {
@@ -15,10 +25,13 @@ const getPemasok = async (req, res) => {
 
 const addPemasok = async (req, res) => {
   try {
-    const { nama_pemasok, kontak, alamat, catatan } = req.body;
+    let { nama_pemasok, kontak, alamat, catatan } = req.body;
+      kontak = normalizeWhatsAppNumber(kontak);
     if (!nama_pemasok) return res.status(400).json({ message: 'Nama wajib diisi' });
     if (!kontak || !isValidWhatsAppNumber(kontak)) {
-      return res.status(400).json({ message: 'Nomor WhatsApp tidak valid. Gunakan format 62xxxxxxxxxx' });
+      return res.status(400).json({ 
+        message: 'Nomor WhatsApp tidak valid. Gunakan format kode negara, contoh 601123456789 atau 628123456789' 
+      });
     }
 
     const data = await createPemasok(nama_pemasok, kontak, alamat, catatan);
@@ -31,11 +44,14 @@ const addPemasok = async (req, res) => {
 const editPemasok = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nama_pemasok, kontak, alamat, catatan } = req.body;
+    let { nama_pemasok, kontak, alamat, catatan } = req.body;
+      kontak = normalizeWhatsAppNumber(kontak);
 
     if (!nama_pemasok) return res.status(400).json({ message: 'Nama wajib diisi' });
     if (!kontak || !isValidWhatsAppNumber(kontak)) {
-      return res.status(400).json({ message: 'Nomor WhatsApp tidak valid. Gunakan format 62xxxxxxxxxx' });
+      return res.status(400).json({ 
+        message: 'Nomor WhatsApp tidak valid. Gunakan format kode negara, contoh 601123456789 atau 628123456789' 
+      });
     }
 
     const pemasok = await updatePemasok(id, nama_pemasok, kontak, alamat, catatan);
