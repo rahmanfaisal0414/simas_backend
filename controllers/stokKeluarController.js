@@ -70,16 +70,21 @@ const addStokKeluar = async (req, res) => {
     notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;    
 
     if (pelangganNoWa) {
+      const targetWa = String(pelangganNoWa).replace(/[^\d]/g, "");
+    
       const formData = new FormData();
-      formData.append("target", pelangganNoWa);
+      formData.append("target", targetWa);
       formData.append("message", notaText);
-
-      await axios.post("https://api.fonnte.com/send", formData, {
+      formData.append("countryCode", "0");
+    
+      const fonnteResponse = await axios.post("https://api.fonnte.com/send", formData, {
         headers: {
           Authorization: process.env.FONNTE_TOKEN,
           ...formData.getHeaders()
         }
       });
+    
+      console.log("Fonnte response:", fonnteResponse.data);
     }
 
     res.status(201).json({
