@@ -277,47 +277,107 @@ async function getRiwayatDetail(tipe, notaId, barangId) {
 }
 
 const deleteRiwayat = async (tipe, notaId, barangId) => {
-  let table = '';
-  let jumlah = 0;
+  const client = await pool.connect();
 
-  if (tipe === 'masuk') {
-    table = 'stok_masuk_detail';
-    const res = await pool.query(`SELECT jumlah FROM ${table} WHERE nota_id = $1 AND barang_id = $2`, [notaId, barangId]);
-    if (res.rows.length) {
-      jumlah = res.rows[0].jumlah;
-      await pool.query(`UPDATE barang SET stok = stok - $1 WHERE id = $2`, [jumlah, barangId]);
-      await pool.query(`DELETE FROM ${table} WHERE nota_id = $1 AND barang_id = $2`, [notaId, barangId]);
-    }
-  } 
-  else if (tipe === 'keluar') {
-    table = 'stok_keluar_detail';
-    const res = await pool.query(`SELECT jumlah FROM ${table} WHERE nota_id = $1 AND barang_id = $2`, [notaId, barangId]);
-    if (res.rows.length) {
-      jumlah = res.rows[0].jumlah;
-      await pool.query(`UPDATE barang SET stok = stok + $1 WHERE id = $2`, [jumlah, barangId]);
-      await pool.query(`DELETE FROM ${table} WHERE nota_id = $1 AND barang_id = $2`, [notaId, barangId]);
-    }
-  } 
-  else if (tipe === 'audit') {
-    table = 'audit_stok_detail';
-    const res = await pool.query(
-      `SELECT stok_sistem, stok_fisik FROM ${table} WHERE nota_id = $1 AND barang_id = $2`,
-      [notaId, barangId]
-    );
-    if (res.rows.length) {
-      const { stok_sistem, stok_fisik } = res.rows[0];
-      const selisih = stok_fisik - stok_sistem;
+  try {
+    await client.query('BEGIN');
 
-      await pool.query(
-        `UPDATE barang SET stok = stok - $1 WHERE id = $2`,
-        [selisih, barangId]
-      );
-  
-      await pool.query(
-        `DELETE FROM ${table} WHERE nota_id = $1 AND barang_id = $2`,
+    let detailTable = '';
+    let notaTable = '';
+
+    if (tipe === 'masuk') {
+      detailTable = 'stok_masuk_detail';
+      notaTable = 'nota_stok_masuk';
+
+      const res = await client.query(
+        `SELECT jumlah FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
         [notaId, barangId]
       );
+
+      if (res.rows.length) {
+        const jumlah = res.rows[0].jumlah;
+
+        await client.query(
+          `UPDATE barang SET stok = stok - $1, updated_at = NOW() WHERE id = $2`,
+          [jumlah, barangId]
+        );
+
+        await client.query(
+          `DELETE FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
+          [notaId, barangId]
+        );
+      }
     }
+
+    else if (tipe === 'keluar') {
+      detailTable = 'stok_keluar_detail';
+      notaTable = 'nota_stok_keluar';
+
+      const res = await client.query(
+        `SELECT jumlah FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
+        [notaId, barangId]
+      );
+
+      if (res.rows.length) {
+        const jumlah = res.rows[0].jumlah;
+
+        await client.query(
+          `UPDATE barang SET stok = stok + $1, updated_at = NOW() WHERE id = $2`,
+          [jumlah, barangId]
+        );
+
+        await client.query(
+          `DELETE FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
+          [notaId, barangId]
+        );
+      }
+    }
+
+    else if (tipe === 'audit') {
+      detailTable = 'audit_stok_detail';
+      notaTable = 'nota_audit_stok';
+
+      const res = await client.query(
+        `SELECT stok_sistem, stok_fisik FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
+        [notaId, barangId]
+      );
+
+      if (res.rows.length) {
+        const { stok_sistem, stok_fisik } = res.rows[0];
+        const selisih = stok_fisik - stok_sistem;
+
+        await client.query(
+          `UPDATE barang SET stok = stok - $1, updated_at = NOW() WHERE id = $2`,
+          [selisih, barangId]
+        );
+
+        await client.query(
+          `DELETE FROM ${detailTable} WHERE nota_id = $1 AND barang_id = $2`,
+          [notaId, barangId]
+        );
+      }
+    }
+
+    if (detailTable && notaTable) {
+      const remaining = await client.query(
+        `SELECT COUNT(*)::int AS total FROM ${detailTable} WHERE nota_id = $1`,
+        [notaId]
+      );
+
+      if (remaining.rows[0].total === 0) {
+        await client.query(
+          `DELETE FROM ${notaTable} WHERE id = $1`,
+          [notaId]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 };
 
