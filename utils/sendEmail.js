@@ -1,42 +1,53 @@
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+const nodemailer = require("nodemailer");
+require("dotenv").config();
 
-/**
- * Mengirim email
- * @param {string} to 
- * @param {string} subject
- * @param {string} content 
- * @param {boolean} isHtml
- * @returns {Promise<boolean>}
- */
 const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
+    const smtpHost = process.env.BREVO_SMTP_HOST;
+    const smtpPort = Number(process.env.BREVO_SMTP_PORT || 587);
+    const smtpUser = process.env.BREVO_SMTP_USER;
+    const smtpPass = process.env.BREVO_SMTP_PASS;
+
+    const senderName = process.env.BREVO_SENDER_NAME || "SIMAS";
+    const senderEmail = process.env.BREVO_SENDER_EMAIL;
+
+    if (!smtpHost || !smtpUser || !smtpPass || !senderEmail) {
+      console.error("❌ Brevo SMTP env belum lengkap");
+      return false;
+    }
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail', 
+      host: smtpHost,
+      port: smtpPort,
+      secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+        user: smtpUser,
+        pass: smtpPass,
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
-      from: `"SIMAS" <${process.env.EMAIL_USER}>`,
+      from: `"${senderName}" <${senderEmail}>`,
       to,
-      subject
+      subject,
+      ...(isHtml ? { html: content } : { text: content }),
     };
-
-    if (isHtml) {
-      mailOptions.html = content;
-    } else {
-      mailOptions.text = content;
-    }
 
     const info = await transporter.sendMail(mailOptions);
 
-    console.log(`✅ Email terkirim ke ${to}: ${info.response}`);
+    console.log(`✅ Email Brevo terkirim ke ${to}: ${info.response}`);
     return true;
   } catch (error) {
-    console.error(`❌ Gagal mengirim email ke ${to}:`, error.message);
+    console.error("❌ Brevo SMTP Send Error:", {
+      code: error.code,
+      command: error.command,
+      message: error.message,
+      response: error.response,
+    });
+
     return false;
   }
 };
