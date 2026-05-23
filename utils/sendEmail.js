@@ -1,51 +1,42 @@
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
+/**
+ * Mengirim email
+ * @param {string} to 
+ * @param {string} subject
+ * @param {string} content 
+ * @param {boolean} isHtml
+ * @returns {Promise<boolean>}
+ */
 const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
-    const emailUser = process.env.EMAIL_USER;
-    const emailPass = process.env.EMAIL_PASS?.replace(/\s/g, "");
-
-    if (!emailUser || !emailPass) {
-      console.error("❌ EMAIL_USER atau EMAIL_PASS belum diset");
-      return false;
-    }
-
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
+      service: 'gmail', 
       auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
     });
 
-    await transporter.verify();
-    console.log("✅ Gmail SMTP ready");
-
     const mailOptions = {
-      from: `"SIMAS" <${emailUser}>`,
+      from: `"SIMAS" <${process.env.EMAIL_USER}>`,
       to,
-      subject,
-      ...(isHtml ? { html: content } : { text: content }),
+      subject
     };
+
+    if (isHtml) {
+      mailOptions.html = content;
+    } else {
+      mailOptions.text = content;
+    }
 
     const info = await transporter.sendMail(mailOptions);
 
     console.log(`✅ Email terkirim ke ${to}: ${info.response}`);
     return true;
   } catch (error) {
-    console.error("❌ Send Email Error:", {
-      code: error.code,
-      command: error.command,
-      message: error.message,
-      response: error.response,
-    });
-
+    console.error(`❌ Gagal mengirim email ke ${to}:`, error.message);
     return false;
   }
 };
