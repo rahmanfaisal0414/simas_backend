@@ -1,53 +1,42 @@
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
+/**
+ * Mengirim email
+ * @param {string} to 
+ * @param {string} subject
+ * @param {string} content 
+ * @param {boolean} isHtml
+ * @returns {Promise<boolean>}
+ */
 const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
-    const smtpHost = process.env.BREVO_SMTP_HOST;
-    const smtpPort = Number(process.env.BREVO_SMTP_PORT || 587);
-    const smtpUser = process.env.BREVO_SMTP_USER;
-    const smtpPass = process.env.BREVO_SMTP_PASS;
-
-    const senderName = process.env.BREVO_SENDER_NAME || "SIMAS";
-    const senderEmail = process.env.BREVO_SENDER_EMAIL;
-
-    if (!smtpHost || !smtpUser || !smtpPass || !senderEmail) {
-      console.error("❌ Brevo SMTP env belum lengkap");
-      return false;
-    }
-
     const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: false,
+      service: 'gmail', 
       auth: {
-        user: smtpUser,
-        pass: smtpPass,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
     });
 
     const mailOptions = {
-      from: `"${senderName}" <${senderEmail}>`,
+      from: `"SIMAS" <${process.env.EMAIL_USER}>`,
       to,
-      subject,
-      ...(isHtml ? { html: content } : { text: content }),
+      subject
     };
+
+    if (isHtml) {
+      mailOptions.html = content;
+    } else {
+      mailOptions.text = content;
+    }
 
     const info = await transporter.sendMail(mailOptions);
 
-    console.log(`✅ Email Brevo terkirim ke ${to}: ${info.response}`);
+    console.log(`✅ Email terkirim ke ${to}: ${info.response}`);
     return true;
   } catch (error) {
-    console.error("❌ Brevo SMTP Send Error:", {
-      code: error.code,
-      command: error.command,
-      message: error.message,
-      response: error.response,
-    });
-
+    console.error(`❌ Gagal mengirim email ke ${to}:`, error.message);
     return false;
   }
 };

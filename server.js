@@ -18,10 +18,6 @@ const publicRoutes = require('./routes/publicRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
-
-app.set('trust proxy', 1);
-console.log('Trust proxy:', app.get('trust proxy'));
-
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
