@@ -1,59 +1,51 @@
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 require("dotenv").config();
 
-/**
- * Mengirim email menggunakan Gmail SMTP
- * @param {string} to
- * @param {string} subject
- * @param {string} content
- * @param {boolean} isHtml
- * @returns {Promise<boolean>}
- */
 const sendEmail = async (to, subject, content, isHtml = false) => {
   try {
-    const emailUser = process.env.EMAIL_USER;
-    const emailPass = process.env.EMAIL_PASS?.replace(/\s/g, "");
+    const apiKey = process.env.BREVO_API_KEY;
+    const senderName = process.env.BREVO_SENDER_NAME || "SIMAS";
+    const senderEmail = process.env.BREVO_SENDER_EMAIL;
 
-    if (!emailUser || !emailPass) {
-      console.error("❌ EMAIL_USER atau EMAIL_PASS belum diset");
+    if (!apiKey || !senderEmail) {
+      console.error("❌ BREVO_API_KEY atau BREVO_SENDER_EMAIL belum diset");
       return false;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: {
-        user: emailUser,
-        pass: emailPass,
+    const payload = {
+      sender: {
+        name: senderName,
+        email: senderEmail,
       },
-
-      // penting biar Railway tidak nunggu 120 detik
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-
-    const mailOptions = {
-      from: `"SIMAS" <${emailUser}>`,
-      to,
+      to: [
+        {
+          email: to,
+        },
+      ],
       subject,
-      ...(isHtml ? { html: content } : { text: content }),
+      ...(isHtml ? { htmlContent: content } : { textContent: content }),
     };
 
-    console.log("📧 Mulai kirim email OTP ke:", to);
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      payload,
+      {
+        headers: {
+          accept: "application/json",
+          "api-key": apiKey,
+          "content-type": "application/json",
+        },
+        timeout: 15000,
+      }
+    );
 
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log(`✅ Email terkirim ke ${to}: ${info.response}`);
+    console.log("✅ Email Brevo API terkirim:", response.data);
     return true;
   } catch (error) {
-    console.error("❌ Gmail SMTP Send Error:", {
-      code: error.code,
-      command: error.command,
+    console.error("❌ Brevo API Send Error:", {
+      status: error.response?.status,
+      data: error.response?.data,
       message: error.message,
-      response: error.response,
     });
 
     return false;
