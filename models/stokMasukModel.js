@@ -5,14 +5,15 @@ const createNotaStokMasuk = async (data) => {
   try {
     await client.query('BEGIN');
 
-    const { pemasok_id, user_id, catatan, barang } = data;
+    const { pemasok_id, user_id, catatan, barang, tanggal } = data;
 
     const notaRes = await client.query(
       `INSERT INTO nota_stok_masuk (pemasok_id, user_id, catatan, tanggal)
-       VALUES ($1, $2, $3, NOW())
+       VALUES ($1, $2, $3, COALESCE($4::timestamptz, NOW()))
        RETURNING id, nota, tanggal`,
-      [pemasok_id, user_id, catatan]
+      [pemasok_id, user_id, catatan, tanggal || null]
     );
+
     const nota_id = notaRes.rows[0].id;
 
     for (const item of barang) {
@@ -32,10 +33,12 @@ const createNotaStokMasuk = async (data) => {
     }
 
     await client.query('COMMIT');
+
     return {
       message: 'Stok masuk berhasil disimpan',
+      id: notaRes.rows[0].id,
       nota: notaRes.rows[0].nota,
-      tanggal: notaRes.rows[0].tanggal,  
+      tanggal: notaRes.rows[0].tanggal,
     };
   } catch (err) {
     await client.query('ROLLBACK');
