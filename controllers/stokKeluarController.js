@@ -25,33 +25,33 @@ const addStokKeluar = async (req, res) => {
     const linkNota = `${baseUrl}/nota/${notaId}?sig=${sigNota}`;
     const linkRiwayat = `${baseUrl}/pelanggan/${pelangganId}?sig=${sigRiwayat}`;
 
-    let notaText = `*TOKO BERKAH*\nJl. Seoekarno-Hatta, Pekanbaru\n`;
+    let notaText = `*TOKO BERKAH*\nJl. Soekarno-Hatta, Pekanbaru\n`;
     notaText += `--------------------------------\n`;
-    notaText += `*NOTA PEMBELIAN*\n`;
-    notaText += `*No Nota*   : ${notaNomor}\n`;
-    notaText += `*Tanggal*   : ${tanggal}\n`;
-    notaText += `*Pelanggan* : ${pelangganNama}\n`;
+    notaText += `*PURCHASE RECEIPT*\n`;
+    notaText += `*Receipt No.* : ${notaNomor}\n`;
+    notaText += `*Date*        : ${tanggal}\n`;
+    notaText += `*Customer*    : ${pelangganNama}\n`;
     notaText += `--------------------------------\n`;
-    notaText += `*Daftar Barang:*\n`;
+    notaText += `*Item List:*\n`;
 
     notaDetail.detail.forEach((item, idx) => {
       const jumlah = item.jumlah || 0;
       const hargaPerPcs = item.harga_satuan;
       const hargaPerKodi = hargaPerPcs * 20;
-    
+
       const kodi = Math.floor(jumlah / 20);
       const pcs = jumlah % 20;
-    
+
       let rincian = [];
       if (kodi > 0) {
-        rincian.push(`${kodi} kodi x ${formatRupiah(hargaPerKodi)}`);
+        rincian.push(`${kodi} bundle x ${formatRupiah(hargaPerKodi)}`);
       }
       if (pcs > 0) {
         rincian.push(`${pcs} pcs x ${formatRupiah(hargaPerPcs)}`);
       }
-    
+
       const totalHargaItem = (kodi * hargaPerKodi) + (pcs * hargaPerPcs);
-    
+
       notaText += `${idx + 1}. *${item.nama_barang}*\n`;
       rincian.forEach(r => {
         notaText += `    • ${r}\n`;
@@ -59,15 +59,15 @@ const addStokKeluar = async (req, res) => {
       notaText += `    = *${formatRupiah(totalHargaItem)}*\n`;
       notaText += `--------------------------------\n`;
     });
-    
+
     notaText += `--------------------------------\n`;
-    notaText += `*Total Bayar*: *${formatRupiah(totalHarga)}*\n`;
+    notaText += `*Total Payment*: *${formatRupiah(totalHarga)}*\n`;
     notaText += `--------------------------------\n\n`;
-    
-    notaText += `🧾 Lihat nota online:\n${linkNota}\n\n`; 
-    notaText += `📜 Riwayat pembelian:\n${linkRiwayat}\n\n`; 
-    
-    notaText += `🙏 Terima kasih telah berbelanja di *Toko Berkah*.\n`;    
+
+    notaText += `🧾 View online receipt:\n${linkNota}\n\n`;
+    notaText += `📜 Purchase history:\n${linkRiwayat}\n\n`;
+
+    notaText += `🙏 Thank you for shopping at *Toko Berkah*.\n`;  
 
     if (pelangganNoWa) {
       const targetWa = String(pelangganNoWa).replace(/[^\d]/g, "");
