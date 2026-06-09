@@ -27,6 +27,14 @@ const formatTransactionType = (tipe) => {
   return tipe || '-';
 };
 
+const formatRelation = (relasi) => {
+  if (!relasi) return '-';
+
+  return String(relasi)
+    .replace(/\bPelanggan\b/gi, 'Customer')
+    .replace(/\bPemasok\b/gi, 'Supplier');
+};
+
 /* ========================
    EXPORT STOCK - EXCEL
 ======================== */
@@ -207,7 +215,7 @@ async function exportLaporanTransaksiExcel(req, res) {
           tipe: formatTransactionType(r.tipe),
           tanggal: fmtTanggal(r.tanggal),
           nota: r.nota || '-',
-          relasi: r.relasi || '-',
+          relasi: formatRelation(r.relasi),
           nama_barang: r.nama_barang || '-',
           jumlah: r.jumlah ?? 0,
           harga_satuan: Number(r.harga_satuan || 0),
@@ -283,7 +291,7 @@ async function exportLaporanTransaksiPdf(req, res) {
           tipe: formatTransactionType(r.tipe),
           tanggal: r.tanggal,
           nota: r.nota || '-',
-          relasi: r.relasi || '-',
+          relasi: formatRelation(r.relasi),
           nama_barang: r.nama_barang || '-',
           jumlah: r.jumlah ?? 0,
           harga_satuan: r.harga_satuan ?? 0,
